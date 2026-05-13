@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamFlow — Тренажёр</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent: #c8f04d;
+    --accent2: #ff6b6b;
+    --accent3: #6bc5ff;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --correct: #4dcd8f;
+    --wrong: #ff6b6b;
+    --radius: 12px;
+    --font: 'Syne', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── UPLOAD SCREEN ── */
+  #upload-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 5rem 2rem 2rem;
+    gap: 1.5rem;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a2a0a 0%, var(--bg) 70%);
+    position: relative;
+  }
+
+  .logo {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .logo span { color: var(--accent); }
+
+  .tagline {
+    font-size: 1rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+  }
+
+  .author-banner {
+    width: 100%;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.6rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: absolute;
+    top: 0; left: 0;
+    letter-spacing: 0.04em;
+  }
+  .author-banner span { color: var(--accent); }
+
+  .import-block {
+    width: min(560px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .import-label { font-weight: 700; font-size: 1rem; color: var(--text); }
+
+  .format-hint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+  .format-hint strong { color: var(--accent); }
+
+  #import-textarea {
+    width: 100%;
+    min-height: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    line-height: 1.7;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+  #import-textarea:focus { border-color: var(--accent); }
+  #import-textarea::placeholder { color: var(--muted); }
+
+  .import-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  .btn-file-label {
+    flex: 1; min-width: 160px;
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.875rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-file-label:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-file-label input { display: none; }
+
+  .btn-start {
+    flex: 1; min-width: 160px;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius); border: none;
+    background: var(--accent); color: #0d0d0f;
+    font-family: var(--font); font-size: 0.875rem; font-weight: 700;
+    cursor: pointer; transition: filter 0.15s;
+  }
+  .btn-start:hover { filter: brightness(1.1); }
+
+  .file-name-hint { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); min-height: 1rem; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+    gap: 1rem;
+  }
+  .header-logo { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.04em; cursor:pointer; }
+  .header-logo span { color: var(--accent); }
+  .q-counter { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+
+  .btn-export, .btn-reset {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer;
+    font-family: var(--font); font-size: 0.75rem; transition: all 0.15s;
+  }
+  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-reset:hover { border-color: var(--wrong); color: var(--wrong); }
+
+  /* ── DESKTOP NAV ── */
+  #desktop-nav {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #desktop-nav::-webkit-scrollbar { display: none; }
+
+  .nav-btn {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    border-radius: 8px; border: none;
+    background: none;
+    color: var(--muted);
+    font-family: var(--font); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .nav-btn:hover { color: var(--text); background: var(--surface2); }
+  .nav-btn.active { background: var(--accent); color: #0d0d0f; }
+
+  /* ── MAIN ── */
+  main { flex: 1; padding: 1.5rem; max-width: 700px; width: 100%; margin: 0 auto; }
+
+  /* ── HOME SCREEN (desktop grid) ── */
+  #home-screen { display: none; }
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .home-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .home-tile:hover { border-color: var(--accent); transform: translateY(-3px); background: var(--surface2); }
+  .home-tile-icon { font-size: 2rem; }
+  .home-tile-name { font-weight: 700; font-size: 1rem; }
+  .home-tile-desc { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── MOBILE HOME ── */
+  #mobile-home { display: none; }
+  .mobile-select-wrap { margin: 1.5rem 0 1rem; }
+  .mobile-select-label { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .mobile-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.875rem 1rem;
+    color: var(--text);
+    font-family: var(--font); font-size: 1rem; font-weight: 600;
+    outline: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b80' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+  }
+  .mobile-select:focus { border-color: var(--accent); }
+  .btn-mobile-start {
+    width: 100%; padding: 1rem;
+    background: var(--accent); color: #0d0d0f;
+    border: none; border-radius: var(--radius);
+    font-family: var(--font); font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: filter 0.15s;
+  }
+  .btn-mobile-start:hover { filter: brightness(1.1); }
+
+  /* ── BACK BUTTON (mobile in-mode) ── */
+  .btn-back {
+    display: none;
+    align-items: center; gap: 0.4rem;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.5rem 0.875rem;
+    border-radius: var(--radius);
+    font-family: var(--font); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    margin-bottom: 1rem;
+  }
+  .btn-back:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+    animation: fadeUp 0.25s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-label {
+    font-family: var(--mono); font-size: 0.7rem; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .question-text {
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    font-weight: 700; line-height: 1.4;
+    margin-bottom: 1.5rem;
+    white-space: pre-line;
+  }
+
+  .answer-box {
+    background: var(--surface2); border-radius: var(--radius);
+    padding: 1.25rem; margin-bottom: 1rem;
+    display: none; border-left: 3px solid var(--accent);
+  }
+  .answer-box.visible { display: block; animation: fadeUp 0.2s ease; }
+  .answer-label { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+  .answer-text { font-size: 1rem; line-height: 1.6; white-space: pre-line; }
+
+  /* ── INPUT ── */
+  .input-wrap { margin-bottom: 1rem; }
+  .answer-input {
+    width: 100%;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.875rem 1rem;
+    color: var(--text); font-family: var(--font); font-size: 0.95rem;
+    outline: none; transition: border-color 0.15s;
+  }
+  .answer-input:focus { border-color: var(--accent); }
+  .answer-input.correct { border-color: var(--correct); background: #0d2018; }
+  .answer-input.wrong   { border-color: var(--wrong);   background: #200d0d; }
+
+  .check-result {
+    margin-top: 0.5rem; font-family: var(--mono); font-size: 0.82rem; display: none;
+  }
+  .check-result.correct { color: var(--correct); display: block; }
+  .check-result.wrong   { color: var(--wrong);   display: block; }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  .btn {
+    flex: 1; min-width: 100px;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius); border: none;
+    font-family: var(--font); font-size: 0.875rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary  { background: var(--accent);  color: #0d0d0f; }
+  .btn-primary:hover  { filter: brightness(1.1); }
+  .btn-success  { background: var(--correct); color: #0d2018; }
+  .btn-success:hover  { filter: brightness(1.1); }
+  .btn-danger   { background: var(--wrong);   color: #200d0d; }
+  .btn-danger:hover   { filter: brightness(1.1); }
+  .btn-ghost    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover    { border-color: var(--accent); color: var(--accent); }
+  .btn-info     { background: var(--accent3); color: #0d1a20; }
+  .btn-info:hover     { filter: brightness(1.1); }
+  .btn-warn     { background: #f0a030; color: #1a0d00; }
+  .btn-warn:hover     { filter: brightness(1.1); }
+
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; filter: none !important; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { margin-bottom: 1.5rem; }
+  .progress-bar { height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s cubic-bezier(.4,0,.2,1); }
+  .progress-meta {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem;
+  }
+
+  /* ── STATS SCREEN ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; }
+  .stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.25rem; }
+  .stat-label { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.07em; }
+  .stat-total { color: var(--text); }
+  .stat-ok    { color: var(--correct); }
+  .stat-bad   { color: var(--wrong); }
+  .stat-pct   { color: var(--accent); }
+
+  .hardest-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--muted); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+  .hardest-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.875rem 1rem; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 1rem;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .hardest-item:hover { border-color: var(--accent); }
+  .hardest-q { flex: 1; font-size: 0.875rem; }
+  .hardest-badge { background: var(--wrong); color: #fff; border-radius: 6px; padding: 0.2rem 0.5rem; font-family: var(--mono); font-size: 0.7rem; white-space: nowrap; }
+
+  /* ── LIST SCREEN ── */
+  .search-input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.875rem 1rem; color: var(--text); font-family: var(--font); font-size: 0.95rem;
+    outline: none; transition: border-color 0.15s; margin-bottom: 1rem;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  .q-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .q-list-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.875rem 1rem; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .q-list-item:hover { border-color: var(--accent); transform: translateX(4px); }
+  .q-list-item .q-idx { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); min-width: 24px; }
+  .q-list-item .q-text { flex: 1; font-size: 0.875rem; }
+  .q-list-item .q-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .q-list-item .q-dot.ok  { background: var(--correct); }
+  .q-list-item .q-dot.bad { background: var(--wrong); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 200;
+    align-items: center; justify-content: center; padding: 1.5rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; max-width: 500px; width: 100%;
+    animation: fadeUp 0.2s ease; max-height: 80vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+  .modal .answer-text { font-size: 0.95rem; line-height: 1.6; color: var(--muted); margin-bottom: 1.5rem; white-space: pre-line; }
+  .modal-close {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 0.6rem 1.2rem; border-radius: var(--radius);
+    cursor: pointer; font-family: var(--font); font-size: 0.85rem; font-weight: 600; transition: all 0.15s;
+  }
+  .modal-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--muted); font-family: var(--mono); }
+  .empty .big { font-size: 3rem; margin-bottom: 1rem; }
+
+  /* ── MODE BADGE ── */
+  .mode-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 99px; padding: 0.3rem 0.75rem;
+    font-family: var(--mono); font-size: 0.7rem; color: var(--muted); margin-bottom: 1.5rem;
+  }
+  .mode-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ── FOOTER ── */
+  .app-footer {
+    text-align: center; padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em;
+  }
+  .app-footer span { color: var(--accent); }
+
+  /* ── TEST MODE ── */
+  .test-options { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+  .test-option {
+    background: var(--surface2); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+    cursor: pointer; transition: all 0.15s;
+    font-size: 0.9rem; line-height: 1.4; text-align: left;
+  }
+  .test-option:hover { border-color: var(--accent3); color: var(--accent3); }
+  .test-option.selected-correct { border-color: var(--correct); background: #0d2018; color: var(--correct); }
+  .test-option.selected-wrong   { border-color: var(--wrong);   background: #200d0d; color: var(--wrong); }
+  .test-option.reveal-correct   { border-color: var(--correct); background: #0d2018; color: var(--correct); }
+  .test-option:disabled { cursor: not-allowed; }
+
+  /* ── CLOZE MODE ── */
+  .cloze-text {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    line-height: 1.9;
+    margin-bottom: 1.5rem;
+  }
+  .cloze-blank {
+    display: inline-block;
+    min-width: 80px; height: 1.5em;
+    border-bottom: 2px solid var(--accent);
+    background: transparent; color: var(--text);
+    font-family: var(--font); font-size: inherit;
+    text-align: center; outline: none;
+    padding: 0 4px; vertical-align: bottom;
+    transition: border-color 0.15s;
+  }
+  .cloze-blank:focus { border-color: var(--accent3); }
+  .cloze-blank.correct-blank { border-color: var(--correct); color: var(--correct); }
+  .cloze-blank.wrong-blank   { border-color: var(--wrong);   color: var(--wrong); }
+  .cloze-blank.revealed-blank { border-color: var(--muted); color: var(--muted); background: var(--surface2); }
+
+  .cloze-warning {
+    background: var(--surface2); border: 1px solid #f0a030;
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+    font-family: var(--mono); font-size: 0.82rem; color: #f0a030;
+    margin-bottom: 1rem; line-height: 1.6;
+  }
+  .cloze-mode-toggle {
+    display: flex; gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .cloze-toggle-btn {
+    flex: 1; padding: 0.5rem; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--muted); font-family: var(--font); font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cloze-toggle-btn.active { border-color: var(--accent); color: var(--accent); background: #1a1f10; }
+
+  /* ── EXAM MODE ── */
+  .exam-timer {
+    font-family: var(--mono); font-size: 2rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  .exam-timer.warning { color: var(--wrong); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+  .exam-results { animation: fadeUp 0.3s ease; }
+  .exam-result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+  }
+  .exam-result-row:last-child { border-bottom: none; }
+  .exam-result-q { flex: 1; color: var(--muted); }
+  .exam-result-badge {
+    padding: 0.2rem 0.5rem; border-radius: 6px;
+    font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+  }
+  .badge-ok  { background: #0d2018; color: var(--correct); }
+  .badge-bad { background: #200d0d; color: var(--wrong); }
+
+  /* ── ERRORS MODE ── */
+  .errors-empty {
+    text-align: center; padding: 3rem 2rem;
+    font-family: var(--mono); color: var(--correct); font-size: 1rem;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-weight: 800; font-size: 1.4rem; letter-spacing: -0.03em; margin-bottom: 0.4rem;
+  }
+  .section-sub { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 767px) {
+    #desktop-nav { display: none !important; }
+    .btn-back { display: flex; }
+
+    #upload-screen { padding: 4rem 1rem 1.5rem; gap: 1rem; }
+    .logo { font-size: 2.8rem; }
+    .tagline { font-size: 0.8rem; letter-spacing: 0.05em; }
+    .import-block { gap: 0.6rem; }
+    .format-hint { font-size: 0.75rem; padding: 0.75rem 1rem; line-height: 1.7; }
+    #import-textarea { min-height: 150px; font-size: 0.85rem; }
+    .import-actions { flex-direction: column; gap: 0.5rem; }
+    .btn-file-label, .btn-start { min-width: unset; width: 100%; font-size: 1rem; padding: 0.9rem 1rem; }
+
+    header { padding: 0.75rem 1rem; gap: 0.5rem; }
+    .header-logo { font-size: 1rem; }
+    .q-counter { font-size: 0.7rem; }
+    .btn-export, .btn-reset { padding: 0.35rem 0.6rem; font-size: 0.68rem; }
+
+    main { padding: 0.875rem; }
+    .card { padding: 1.25rem; border-radius: 12px; }
+    .question-text { font-size: 1.1rem; margin-bottom: 1rem; word-break: break-word; }
+    .answer-text { font-size: 0.9rem; word-break: break-word; }
+    .answer-box { padding: 1rem; }
+    .btn-row { flex-direction: column; gap: 0.4rem; }
+    .btn { min-width: unset; width: 100%; font-size: 0.95rem; padding: 0.85rem 1rem; }
+    .answer-input { font-size: 1rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+    .stat-value { font-size: 1.6rem; }
+    .modal { padding: 1.25rem; border-radius: 12px; }
+    .modal h3 { font-size: 1rem; }
+    .modal .answer-text { font-size: 0.875rem; }
+    .search-input { font-size: 1rem; padding: 0.75rem; }
+    .q-list-item { padding: 0.75rem; }
+    .q-list-item .q-text { font-size: 0.825rem; }
+    .hardest-item { padding: 0.75rem; }
+    .app-footer { font-size: 0.65rem; padding: 0.75rem 1rem; }
+    .home-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .home-tile { padding: 1.25rem 1rem; }
+    .home-tile-icon { font-size: 1.5rem; }
+    .home-tile-name { font-size: 0.85rem; }
+    .home-tile-desc { display: none; }
+  }
+
+  @media (min-width: 768px) {
+    #mobile-home { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ UPLOAD SCREEN ════════════════ -->
+<div id="upload-screen">
+  <div class="author-banner">Дизайн и разработка: <span>Тимофей</span>, 106 группа, педиатрический факультет</div>
+  <div class="logo">Exam<span>Flow</span></div>
+  <div class="tagline">// интерактивный тренажёр для экзаменов</div>
+  <div class="import-block">
+    <div class="import-label">📥 Вставьте текст или загрузите файл:</div>
+    <div class="format-hint">
+      <strong>📌 Поддерживаемый формат:</strong><br>
+      Вопрос 1. Морфологические особенности насекомых<br>
+      Тело насекомых разделено на голову, грудь и брюшко...<br><br>
+      Вопрос 2. Отряд вши: особенности и развитие<br>
+      Постоянные эктопаразиты, питаются кровью...<br>
+      <span style="color:var(--muted);font-size:0.78rem">Каждый блок «Вопрос N.» = отдельная карточка</span>
+    </div>
+    <textarea id="import-textarea" placeholder="Вставьте билеты сюда...&#10;&#10;Вопрос 1. Название вопроса&#10;Текст ответа на первый вопрос...&#10;&#10;Вопрос 2. Название второго вопроса&#10;Текст ответа на второй вопрос..."></textarea>
+    <div class="import-actions">
+      <label class="btn-file-label">
+        📂 Выбрать файл (.txt)
+        <input type="file" id="file-input" accept=".txt">
+      </label>
+      <button class="btn-start" onclick="startLearning()">▶ Начать обучение</button>
+    </div>
+    <div id="file-name" class="file-name-hint"></div>
+  </div>
+</div>
+
+<!-- ════════════════ APP ════════════════ -->
+<div id="app">
+  <header>
+    <div class="header-logo" onclick="goHome()">Exam<span>Flow</span></div>
+    <div class="q-counter" id="q-counter">0 вопросов</div>
+    <button class="btn-export" onclick="exportToTxt()">↓ Экспорт</button>
+    <button class="btn-reset" onclick="resetAll()">↩ Сбросить</button>
+  </header>
+
+  <nav id="desktop-nav">
+    <button class="nav-btn" onclick="setMode('home')"       id="nav-home">🏠 Главная</button>
+    <button class="nav-btn" onclick="setMode('flashcard')"  id="nav-flashcard">🃏 Карточки</button>
+    <button class="nav-btn" onclick="setMode('input')"      id="nav-input">✏️ Ввод ответа</button>
+    <button class="nav-btn" onclick="setMode('cloze')"      id="nav-cloze">🔲 Пропуски</button>
+    <button class="nav-btn" onclick="setMode('quiz')"       id="nav-quiz">📝 Тест</button>
+    <button class="nav-btn" onclick="setMode('exam')"       id="nav-exam">⏱ Экзамен</button>
+    <button class="nav-btn" onclick="setMode('errors')"     id="nav-errors">❌ Ошибки</button>
+    <button class="nav-btn" onclick="setMode('list')"       id="nav-list">📋 Все вопросы</button>
+  </nav>
+
+  <main id="main-area"></main>
+
+  <footer class="app-footer">Дизайн и разработка: <span>Тимофей</span>, 106 группа, педиатрический факультет</footer>
+</div>
+
+<!-- ════════════════ MODAL ════════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <h3 id="modal-q"></h3>
+    <div class="answer-text" id="modal-a"></div>
+    <button class="modal-close" onclick="closeModal()">Закрыть</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+let questions = [];
+let currentMode = 'home';
+let answerVisible = false;
+
+// Flashcard state
+let fcIdx = 0;
+
+// Input mode state
+let inpIdx = 0;
+
+// Cloze state
+let clozeIdx = 0;
+let clozeAutoMode = false;
+
+// Quiz state
+let quizIdx = 0;
+let quizOptions = [];
+let quizAnswered = false;
+
+// Exam state
+let examQuestions = [];
+let examPos = 0;
+let examResults = [];
+let examTimer = null;
+let examTimeLeft = 0;
+let examDuration = 0;
+let examAnswerShown = false;
+
+// Errors state
+let errorsPool = [];
+let errorsIdx = 0;
+
+const LS_Q    = 'examflow_questions';
+const LS_MODE = 'examflow_mode';
+const LS_EXAM = 'examflow_examduration';
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+(function init() {
+  const saved = localStorage.getItem(LS_Q);
+  if (saved) {
+    questions = JSON.parse(saved);
+    currentMode = localStorage.getItem(LS_MODE) || 'home';
+    showApp();
+  }
+
+  document.getElementById('file-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('import-textarea').value = ev.target.result;
+      document.getElementById('file-name').textContent = '✓ Файл загружен: ' + file.name;
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+})();
+
+// ════════════════════════════════════════════════════
+//  PARSER (не изменён)
+// ════════════════════════════════════════════════════
+function parseQuestions(text) {
+  const blocks = text.split(/Вопрос\s*\d+\./i);
+  const result = [];
+
+  for (let i = 1; i < blocks.length; i++) {
+    let block = blocks[i].trim();
+    if (!block) continue;
+
+    const lines = block
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    const question = lines[0];
+    let answer = lines.slice(1).join('\n');
+    answer = answer.replace(/^[-•\t]/gm, '').trim();
+
+    if (question && answer) {
+      result.push({
+        question: question.trim(),
+        answer: answer.trim(),
+        stats: { seen: 0, correct: 0, wrong: 0 }
+      });
+    }
+  }
+
+  return result;
+}
+
+// ════════════════════════════════════════════════════
+//  START / SAVE / RESET / EXPORT
+// ════════════════════════════════════════════════════
+function startLearning() {
+  const text = document.getElementById('import-textarea').value;
+  if (!text.trim()) { alert('Вставьте текст или загрузите файл.'); return; }
+  const parsed = parseQuestions(text);
+  if (parsed.length === 0) {
+    alert('Не удалось найти вопросы. Убедитесь, что текст содержит блоки вида:\n\nВопрос 1. Название\nТекст ответа...');
+    return;
+  }
+  questions = parsed;
+  currentMode = 'home';
+  saveData();
+  showApp();
+}
+
+function saveData() {
+  localStorage.setItem(LS_Q, JSON.stringify(questions));
+  localStorage.setItem(LS_MODE, currentMode);
+}
+
+function resetAll() {
+  if (!confirm('Сбросить все вопросы и статистику?')) return;
+  if (examTimer) clearInterval(examTimer);
+  localStorage.removeItem(LS_Q);
+  localStorage.removeItem(LS_MODE);
+  location.reload();
+}
+
+function exportToTxt() {
+  if (!questions.length) { alert('Нет вопросов для экспорта.'); return; }
+  const text = questions.map((q, i) => `Вопрос ${i + 1}. ${q.question}\n${q.answer}`).join('\n\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'exam_questions.txt'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════
+//  SHOW APP
+// ════════════════════════════════════════════════════
+function showApp() {
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('q-counter').textContent = questions.length + ' вопросов';
+  setMode(currentMode);
+}
+
+function goHome() { setMode('home'); }
+
+// ════════════════════════════════════════════════════
+//  MODE SWITCHING
+// ════════════════════════════════════════════════════
+function setMode(mode) {
+  if (examTimer) { clearInterval(examTimer); examTimer = null; }
+  currentMode = mode;
+  saveData();
+  answerVisible = false;
+
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + mode);
+  if (navEl) navEl.classList.add('active');
+
+  const isMobile = window.innerWidth < 768;
+
+  if (mode === 'home')      renderHome(isMobile);
+  else if (mode === 'flashcard') { fcIdx = pickWeighted(); renderFlashcard(); }
+  else if (mode === 'input')     { inpIdx = pickWeighted(); renderInput(); }
+  else if (mode === 'cloze')     { clozeIdx = pickWeighted(); renderCloze(); }
+  else if (mode === 'quiz')      { quizIdx = pickRandom(); renderQuiz(); }
+  else if (mode === 'exam')      renderExamSetup();
+  else if (mode === 'errors')    renderErrors();
+  else if (mode === 'list')      renderList();
+}
+
+// ════════════════════════════════════════════════════
+//  HOME SCREEN
+// ════════════════════════════════════════════════════
+const MODES = [
+  { id:'flashcard', icon:'🃏', name:'Карточки',    desc:'Вспоминай ответ сам, затем проверяй' },
+  { id:'input',     icon:'✏️', name:'Ввод ответа',  desc:'Напечатай ответ — система проверит' },
+  { id:'cloze',     icon:'🔲', name:'Пропуски',     desc:'Заполни пропущенные слова в тексте' },
+  { id:'quiz',      icon:'📝', name:'Тест',         desc:'Выбери правильный из 4 вариантов' },
+  { id:'exam',      icon:'⏱',  name:'Экзамен',      desc:'Таймер, без подсказок, итог в конце' },
+  { id:'errors',    icon:'❌', name:'Ошибки',       desc:'Только вопросы, где ошибок больше' },
+  { id:'list',      icon:'📋', name:'Все вопросы',  desc:'Просмотр и поиск по всему списку' },
+];
+
+function renderHome(isMobile) {
+  const area = document.getElementById('main-area');
+
+  const total = questions.length;
+  const seen  = questions.filter(q => q.stats.seen > 0).length;
+  const corr  = questions.reduce((s, q) => s + q.stats.correct, 0);
+  const wrong = questions.reduce((s, q) => s + q.stats.wrong, 0);
+  const allAns = corr + wrong;
+  const pct = allAns ? Math.round(corr / allAns * 100) : 0;
+
+  const statsBar = `
+    <div class="stats-grid" style="margin-bottom:1.5rem">
+      <div class="stat-card"><div class="stat-value stat-total">${total}</div><div class="stat-label">ВСЕГО</div></div>
+      <div class="stat-card"><div class="stat-value stat-ok">${corr}</div><div class="stat-label">ВЕРНО</div></div>
+      <div class="stat-card"><div class="stat-value stat-bad">${wrong}</div><div class="stat-label">ОШИБОК</div></div>
+      <div class="stat-card"><div class="stat-value stat-pct">${pct}%</div><div class="stat-label">УСПЕХ</div></div>
+    </div>`;
+
+  if (isMobile) {
+    area.innerHTML = `
+      <div class="section-title">ExamFlow</div>
+      <div class="section-sub">// выберите режим обучения</div>
+      ${statsBar}
+      <div id="mobile-home">
+        <div class="mobile-select-wrap">
+          <div class="mobile-select-label">Режим обучения</div>
+          <select class="mobile-select" id="mode-select">
+            ${MODES.map(m => `<option value="${m.id}">${m.icon} ${m.name}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn-mobile-start" onclick="startSelectedMode()">▶ Начать</button>
+      </div>`;
+    document.getElementById('mobile-home').style.display = 'block';
+  } else {
+    area.innerHTML = `
+      <div id="home-screen">
+        <div class="section-title">Выберите режим</div>
+        <div class="section-sub">// нажмите на режим, чтобы начать</div>
+        ${statsBar}
+        <div class="home-grid">
+          ${MODES.map(m => `
+            <div class="home-tile" onclick="setMode('${m.id}')">
+              <div class="home-tile-icon">${m.icon}</div>
+              <div class="home-tile-name">${m.name}</div>
+              <div class="home-tile-desc">${m.desc}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    document.getElementById('home-screen').style.display = 'block';
+  }
+}
+
+function startSelectedMode() {
+  const sel = document.getElementById('mode-select');
+  if (sel) setMode(sel.value);
+}
+
+// ════════════════════════════════════════════════════
+//  UTILITY
+// ════════════════════════════════════════════════════
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function pickWeighted() {
+  if (!questions.length) return 0;
+  const priorities = questions.map((q, i) => ({ i, p: (q.stats.wrong + 1) / (q.stats.seen + 1) }));
+  const total = priorities.reduce((s, x) => s + x.p, 0);
+  let r = Math.random() * total;
+  for (const { i, p } of priorities) { r -= p; if (r <= 0) return i; }
+  return 0;
+}
+
+function pickRandom(exclude = -1) {
+  if (questions.length <= 1) return 0;
+  let idx;
+  do { idx = Math.floor(Math.random() * questions.length); } while (idx === exclude && questions.length > 1);
+  return idx;
+}
+
+function normalize(s) { return s.toLowerCase().trim().replace(/[.,!?;:]+$/,''); }
+
+function backBtn() {
+  return `<button class="btn-back" onclick="setMode('home')">← Назад</button>`;
+}
+
+function progressBar(pos, total) {
+  const pct = total ? Math.round(pos / total * 100) : 0;
+  return `<div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="progress-meta"><span>${pos} из ${total}</span><span>${pct}%</span></div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════
+//  🃏 FLASHCARD MODE
+// ════════════════════════════════════════════════════
+function renderFlashcard() {
+  if (!questions.length) return;
+  const q = questions[fcIdx];
+  answerVisible = false;
+
+  const seen = questions.filter(x => x.stats.seen > 0).length;
+  const area = document.getElementById('main-area');
+
+  area.innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>🃏 Карточки</div>
+    ${progressBar(seen, questions.length)}
+    <div class="card">
+      <div class="card-label">
+        <span>ВОПРОС ${fcIdx + 1}</span>
+        <span>${q.stats.seen ? `✓${q.stats.correct} ✗${q.stats.wrong}` : 'Впервые'}</span>
+      </div>
+      <div class="question-text">${esc(q.question)}</div>
+      <div class="answer-box" id="fc-answer-box">
+        <div class="answer-label">// ПРАВИЛЬНЫЙ ОТВЕТ</div>
+        <div class="answer-text">${esc(q.answer)}</div>
+      </div>
+      <div class="btn-row" style="margin-bottom:0.75rem">
+        <button class="btn btn-ghost" onclick="fcToggleAnswer()" id="fc-show-btn">👁 Показать ответ</button>
+      </div>
+      <div class="btn-row" id="fc-mark-row" style="display:none">
+        <button class="btn btn-success" onclick="fcMark(true)">✓ Знал</button>
+        <button class="btn btn-danger"  onclick="fcMark(false)">✗ Не знал</button>
+      </div>
+    </div>`;
+}
+
+function fcToggleAnswer() {
+  answerVisible = !answerVisible;
+  const box = document.getElementById('fc-answer-box');
+  const btn = document.getElementById('fc-show-btn');
+  const row = document.getElementById('fc-mark-row');
+  if (answerVisible) {
+    box.classList.add('visible');
+    btn.textContent = '🙈 Скрыть ответ';
+    row.style.display = 'flex';
+    questions[fcIdx].stats.seen++;
+    saveData();
+  } else {
+    box.classList.remove('visible');
+    btn.textContent = '👁 Показать ответ';
+    row.style.display = 'none';
+  }
+}
+
+function fcMark(knew) {
+  if (knew) questions[fcIdx].stats.correct++;
+  else       questions[fcIdx].stats.wrong++;
+  saveData();
+  fcIdx = pickWeighted();
+  renderFlashcard();
+}
+
+// ════════════════════════════════════════════════════
+//  ✏️ INPUT MODE
+// ════════════════════════════════════════════════════
+function renderInput() {
+  if (!questions.length) return;
+  const q = questions[inpIdx];
+
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>✏️ Ввод ответа</div>
+    <div class="card">
+      <div class="card-label">
+        <span>ВОПРОС ${inpIdx + 1}</span>
+        <span>${q.stats.seen ? `✓${q.stats.correct} ✗${q.stats.wrong}` : 'Впервые'}</span>
+      </div>
+      <div class="question-text">${esc(q.question)}</div>
+      <div class="input-wrap">
+        <input class="answer-input" id="inp-input" type="text" placeholder="Введите ответ..."
+               onkeydown="if(event.key==='Enter')checkInputMode()">
+        <div class="check-result" id="inp-result"></div>
+      </div>
+      <div class="answer-box" id="inp-answer-box">
+        <div class="answer-label">// ПРАВИЛЬНЫЙ ОТВЕТ</div>
+        <div class="answer-text">${esc(q.answer)}</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="renderInput()">⟳ Пропустить</button>
+        <button class="btn btn-info" onclick="checkInputMode()">Проверить</button>
+        <button class="btn btn-primary" id="inp-next-btn" style="display:none" onclick="inpNext()">Далее →</button>
+      </div>
+    </div>`;
+
+  document.getElementById('inp-input')?.focus();
+}
+
+function checkInputMode() {
+  const inp = document.getElementById('inp-input');
+  if (!inp || !inp.value.trim()) { inp?.focus(); return; }
+  const q = questions[inpIdx];
+  const user = normalize(inp.value);
+  const correct = normalize(q.answer);
+  const isCorrect = user === correct
+    || correct.includes(user)
+    || user.includes(correct.substring(0, Math.floor(correct.length * 0.6)));
+
+  q.stats.seen++;
+  const res = document.getElementById('inp-result');
+  if (isCorrect) {
+    q.stats.correct++;
+    inp.classList.add('correct');
+    res.className = 'check-result correct'; res.textContent = '✓ Верно!';
+  } else {
+    q.stats.wrong++;
+    inp.classList.add('wrong');
+    res.className = 'check-result wrong'; res.textContent = '✗ Неверно. Правильный ответ ниже.';
+  }
+  document.getElementById('inp-answer-box').classList.add('visible');
+  const nextBtn = document.getElementById('inp-next-btn');
+  if (nextBtn) nextBtn.style.display = '';
+  inp.disabled = true;
+  saveData();
+}
+
+function inpNext() {
+  inpIdx = pickWeighted();
+  renderInput();
+}
+
+// ════════════════════════════════════════════════════
+//  🔲 CLOZE MODE
+// ════════════════════════════════════════════════════
+function renderCloze() {
+  if (!questions.length) return;
+  const q = questions[clozeIdx];
+  const hasMarkup = /\*\*[^*]+\*\*/.test(q.answer);
+
+  const toggleHtml = `
+    <div class="cloze-mode-toggle">
+      <button class="cloze-toggle-btn ${!clozeAutoMode ? 'active' : ''}" onclick="setClozeMode(false)">✋ Ручной</button>
+      <button class="cloze-toggle-btn ${clozeAutoMode  ? 'active' : ''}" onclick="setClozeMode(true)">🤖 Авто</button>
+    </div>`;
+
+  let warningHtml = '';
+  if (!clozeAutoMode && !hasMarkup) {
+    warningHtml = `<div class="cloze-warning">⚠️ В этом билете нет размеченных слов. Добавьте разметку: окружите нужные слова звёздочками <strong>**слово**</strong> в тексте билета.</div>`;
+  }
+
+  const clozeText = buildClozeHtml(q.answer, hasMarkup || clozeAutoMode);
+
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>🔲 Пропуски</div>
+    <div class="card">
+      <div class="card-label">
+        <span>ВОПРОС ${clozeIdx + 1}</span>
+        <span>${q.stats.seen ? `✓${q.stats.correct} ✗${q.stats.wrong}` : 'Впервые'}</span>
+      </div>
+      ${toggleHtml}
+      ${warningHtml}
+      <div class="question-text" style="margin-bottom:0.75rem">${esc(q.question)}</div>
+      <div class="cloze-text" id="cloze-text">${clozeText}</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="clozeReveal()">👁 Показать ответы</button>
+        <button class="btn btn-info"  onclick="clozeCheck()">✓ Проверить</button>
+        <button class="btn btn-primary" onclick="clozeNext()">Далее →</button>
+      </div>
+      <div class="check-result" id="cloze-result" style="margin-top:0.75rem"></div>
+    </div>`;
+}
+
+function buildClozeHtml(text, active) {
+  if (!active) return esc(text).replace(/\n/g, '<br>');
+
+  let result = '';
+  if (clozeAutoMode) {
+    // Auto: hide every 4th word longer than 5 chars
+    let wordCount = 0;
+    const tokens = text.split(/(\s+)/);
+    tokens.forEach(token => {
+      if (/\S/.test(token) && token.length > 5) {
+        wordCount++;
+        if (wordCount % 4 === 0) {
+          result += `<input class="cloze-blank" data-answer="${escAttr(token)}" size="${Math.max(8, token.length)}" placeholder="...">`;
+          return;
+        }
+      }
+      result += esc(token).replace(/\n/g, '<br>');
+    });
+  } else {
+    // Manual: hide **word**
+    result = text.replace(/\*\*([^*]+)\*\*/g, (_, word) =>
+      `<input class="cloze-blank" data-answer="${escAttr(word)}" size="${Math.max(8, word.length)}" placeholder="...">`
+    );
+    result = result.replace(/\n/g, '<br>');
+    // Escape non-replaced parts
+    result = result.replace(/(?<!<[^>]*)(?:&(?!amp;|lt;|gt;|quot;))([^<]*?)(?=<|$)/g, s => s);
+    // Simple escape for the text parts
+    const parts = text.split(/\*\*[^*]+\*\*/);
+    const blanks = [...text.matchAll(/\*\*([^*]+)\*\*/g)].map(m =>
+      `<input class="cloze-blank" data-answer="${escAttr(m[1])}" size="${Math.max(8, m[1].length)}" placeholder="...">`
+    );
+    result = '';
+    parts.forEach((part, i) => {
+      result += esc(part).replace(/\n/g, '<br>');
+      if (blanks[i]) result += blanks[i];
+    });
+  }
+  return result || esc(text).replace(/\n/g, '<br>');
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setClozeMode(auto) {
+  if (auto && !clozeAutoMode) {
+    if (!confirm('⚠️ Автоматический режим может скрывать не те слова.\nДля точного результата используйте разметку **слово**.\n\nВключить автоматический режим?')) return;
+  }
+  clozeAutoMode = auto;
+  renderCloze();
+}
+
+function clozeCheck() {
+  const blanks = document.querySelectorAll('.cloze-blank');
+  if (!blanks.length) return;
+  let correct = 0;
+  blanks.forEach(b => {
+    const ans = normalize(b.dataset.answer);
+    const val = normalize(b.value);
+    b.classList.remove('correct-blank','wrong-blank');
+    if (val === ans || ans.includes(val) && val.length > 2) {
+      b.classList.add('correct-blank'); correct++;
+    } else {
+      b.classList.add('wrong-blank');
+    }
+  });
+  const res = document.getElementById('cloze-result');
+  const total = blanks.length;
+  if (correct === total) {
+    res.className = 'check-result correct'; res.textContent = `✓ Все верно! (${correct}/${total})`;
+    questions[clozeIdx].stats.correct++; questions[clozeIdx].stats.seen++;
+  } else {
+    res.className = 'check-result wrong'; res.textContent = `✗ Верно: ${correct}/${total}`;
+    questions[clozeIdx].stats.wrong++; questions[clozeIdx].stats.seen++;
+  }
+  saveData();
+}
+
+function clozeReveal() {
+  const blanks = document.querySelectorAll('.cloze-blank');
+  blanks.forEach(b => {
+    b.value = b.dataset.answer;
+    b.classList.add('revealed-blank');
+    b.disabled = true;
+  });
+}
+
+function clozeNext() {
+  clozeIdx = pickWeighted();
+  renderCloze();
+}
+
+// ════════════════════════════════════════════════════
+//  📝 QUIZ MODE
+// ════════════════════════════════════════════════════
+function renderQuiz() {
+  if (questions.length < 2) {
+    document.getElementById('main-area').innerHTML = `
+      ${backBtn()}
+      <div class="empty"><div class="big">📝</div>Нужно минимум 2 вопроса для теста.</div>`;
+    return;
+  }
+
+  const q = questions[quizIdx];
+  quizAnswered = false;
+
+  // Build 4 options: 1 correct + 3 random
+  const others = questions.filter((_, i) => i !== quizIdx);
+  const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 3);
+  const correct = { idx: quizIdx, text: q.answer, isCorrect: true };
+  quizOptions = [correct, ...shuffled.map(x => ({ text: x.answer, isCorrect: false }))];
+  quizOptions = quizOptions.sort(() => Math.random() - 0.5);
+
+  const opts = quizOptions.map((opt, i) => {
+    const short = opt.text.length > 100 ? opt.text.slice(0, 100) + '...' : opt.text;
+    return `<button class="test-option" onclick="quizSelect(${i})" id="quiz-opt-${i}">${esc(short)}</button>`;
+  }).join('');
+
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>📝 Тест</div>
+    <div class="card">
+      <div class="card-label"><span>ВОПРОС ${quizIdx + 1}</span></div>
+      <div class="question-text">${esc(q.question)}</div>
+      <div class="test-options">${opts}</div>
+      <div class="check-result" id="quiz-result"></div>
+      <div class="btn-row" style="margin-top:1rem">
+        <button class="btn btn-primary" id="quiz-next-btn" style="display:none" onclick="quizNext()">Следующий →</button>
+      </div>
+    </div>`;
+}
+
+function quizSelect(i) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const opt = quizOptions[i];
+  const res = document.getElementById('quiz-result');
+
+  quizOptions.forEach((o, j) => {
+    const btn = document.getElementById('quiz-opt-' + j);
+    if (o.isCorrect) btn.classList.add('reveal-correct');
+    btn.disabled = true;
+  });
+
+  const btn = document.getElementById('quiz-opt-' + i);
+  const q = questions[quizIdx];
+  q.stats.seen++;
+  if (opt.isCorrect) {
+    btn.classList.add('selected-correct');
+    res.className = 'check-result correct'; res.textContent = '✓ Верно!';
+    q.stats.correct++;
+  } else {
+    btn.classList.add('selected-wrong');
+    res.className = 'check-result wrong'; res.textContent = '✗ Неверно.';
+    q.stats.wrong++;
+  }
+  saveData();
+  const nextBtn = document.getElementById('quiz-next-btn');
+  if (nextBtn) nextBtn.style.display = '';
+}
+
+function quizNext() {
+  quizIdx = pickRandom(quizIdx);
+  renderQuiz();
+}
+
+// ════════════════════════════════════════════════════
+//  ⏱ EXAM MODE
+// ════════════════════════════════════════════════════
+function renderExamSetup() {
+  const savedDuration = parseInt(localStorage.getItem(LS_EXAM)) || 30;
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>⏱ Экзамен</div>
+    <div class="card">
+      <div class="card-label"><span>НАСТРОЙКИ ЭКЗАМЕНА</span></div>
+      <div class="question-text" style="font-size:1.1rem;margin-bottom:1.25rem">Проверьте свои знания в режиме экзамена</div>
+      <div style="margin-bottom:1rem">
+        <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);margin-bottom:0.4rem">ВРЕМЯ НА ВОПРОС (МИНУТ)</div>
+        <select id="exam-time-select" class="mobile-select" style="max-width:200px">
+          <option value="1" ${savedDuration===1?'selected':''}>1 мин.</option>
+          <option value="2" ${savedDuration===2?'selected':''}>2 мин.</option>
+          <option value="3" ${savedDuration===3?'selected':''}>3 мин.</option>
+          <option value="5" ${savedDuration===5?'selected':''}>5 мин.</option>
+          <option value="10" ${savedDuration===10?'selected':''}>10 мин.</option>
+          <option value="30" ${savedDuration===30?'selected':''}>30 мин. (весь экзамен)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);margin-bottom:0.4rem">КОЛИЧЕСТВО ВОПРОСОВ</div>
+        <select id="exam-count-select" class="mobile-select" style="max-width:200px">
+          <option value="5">5 вопросов</option>
+          <option value="10" selected>10 вопросов</option>
+          <option value="20">20 вопросов</option>
+          <option value="all">Все (${questions.length})</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startExam()">▶ Начать экзамен</button>
+      </div>
+    </div>`;
+}
+
+function startExam() {
+  const timeMin = parseInt(document.getElementById('exam-time-select').value);
+  const countVal = document.getElementById('exam-count-select').value;
+  const count = countVal === 'all' ? questions.length : Math.min(parseInt(countVal), questions.length);
+  localStorage.setItem(LS_EXAM, timeMin);
+  examDuration = timeMin * 60;
+  examTimeLeft = examDuration;
+  examResults = [];
+  examPos = 0;
+  examAnswerShown = false;
+
+  // Shuffle questions pool
+  const pool = [...Array(questions.length).keys()].sort(() => Math.random() - 0.5);
+  examQuestions = pool.slice(0, count);
+  renderExamQuestion();
+}
+
+function renderExamQuestion() {
+  if (examPos >= examQuestions.length) { renderExamResults(); return; }
+  if (examTimer) clearInterval(examTimer);
+  examTimeLeft = examDuration;
+  examAnswerShown = false;
+
+  const qIdx = examQuestions[examPos];
+  const q = questions[qIdx];
+
+  const updateTimer = () => {
+    const el = document.getElementById('exam-timer');
+    if (!el) { clearInterval(examTimer); return; }
+    const m = String(Math.floor(examTimeLeft / 60)).padStart(2,'0');
+    const s = String(examTimeLeft % 60).padStart(2,'0');
+    el.textContent = `${m}:${s}`;
+    el.className = 'exam-timer' + (examTimeLeft <= 10 ? ' warning' : '');
+    if (examTimeLeft <= 0) { clearInterval(examTimer); examAutoFail(qIdx); }
+    examTimeLeft--;
+  };
+
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>⏱ Экзамен</div>
+    ${progressBar(examPos + 1, examQuestions.length)}
+    <div class="card">
+      <div class="card-label">
+        <span>ВОПРОС ${examPos + 1} из ${examQuestions.length}</span>
+        <div class="exam-timer" id="exam-timer">--:--</div>
+      </div>
+      <div class="question-text">${esc(q.question)}</div>
+      <div class="answer-box" id="exam-answer-box">
+        <div class="answer-label">// ЭТАЛОННЫЙ ОТВЕТ</div>
+        <div class="answer-text">${esc(q.answer)}</div>
+      </div>
+      <div id="exam-actions">
+        <div class="btn-row" style="margin-bottom:0.75rem">
+          <button class="btn btn-ghost" onclick="examShowAnswer(${qIdx})">👁 Показать эталон</button>
+        </div>
+        <div class="btn-row" id="exam-mark-row" style="display:none">
+          <button class="btn btn-success" onclick="examMark(${qIdx}, true)">✓ Знал</button>
+          <button class="btn btn-danger"  onclick="examMark(${qIdx}, false)">✗ Не знал</button>
+        </div>
+      </div>
+    </div>`;
+
+  examTimer = setInterval(updateTimer, 1000);
+  updateTimer();
+}
+
+function examShowAnswer(qIdx) {
+  if (examAnswerShown) return;
+  examAnswerShown = true;
+  document.getElementById('exam-answer-box').classList.add('visible');
+  const markRow = document.getElementById('exam-mark-row');
+  if (markRow) markRow.style.display = 'flex';
+}
+
+function examMark(qIdx, knew) {
+  if (examTimer) clearInterval(examTimer);
+  questions[qIdx].stats.seen++;
+  if (knew) questions[qIdx].stats.correct++; else questions[qIdx].stats.wrong++;
+  examResults.push({ qIdx, knew });
+  examPos++;
+  saveData();
+  renderExamQuestion();
+}
+
+function examAutoFail(qIdx) {
+  questions[qIdx].stats.seen++;
+  questions[qIdx].stats.wrong++;
+  examResults.push({ qIdx, knew: false });
+  examPos++;
+  saveData();
+  renderExamQuestion();
+}
+
+function renderExamResults() {
+  const correct = examResults.filter(r => r.knew).length;
+  const total   = examResults.length;
+  const pct     = total ? Math.round(correct / total * 100) : 0;
+
+  const rows = examResults.map(r => {
+    const q = questions[r.qIdx];
+    return `<div class="exam-result-row">
+      <span class="exam-result-q">${esc(q.question)}</span>
+      <span class="exam-result-badge ${r.knew ? 'badge-ok' : 'badge-bad'}">${r.knew ? '✓' : '✗'}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>⏱ Результаты экзамена</div>
+    <div class="stats-grid" style="margin-bottom:1.5rem">
+      <div class="stat-card"><div class="stat-value stat-total">${total}</div><div class="stat-label">ВСЕГО</div></div>
+      <div class="stat-card"><div class="stat-value stat-ok">${correct}</div><div class="stat-label">ВЕРНО</div></div>
+      <div class="stat-card"><div class="stat-value stat-bad">${total-correct}</div><div class="stat-label">ОШИБОК</div></div>
+      <div class="stat-card"><div class="stat-value stat-pct">${pct}%</div><div class="stat-label">УСПЕХ</div></div>
+    </div>
+    <div class="card exam-results">
+      <div class="card-label"><span>ДЕТАЛИ</span></div>
+      ${rows}
+    </div>
+    <div class="btn-row" style="margin-top:1rem">
+      <button class="btn btn-primary" onclick="renderExamSetup()">↺ Ещё раз</button>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════
+//  ❌ ERRORS MODE
+// ════════════════════════════════════════════════════
+function renderErrors() {
+  errorsPool = questions.map((q, i) => ({ q, i })).filter(({ q }) => q.stats.wrong > q.stats.correct);
+
+  if (!errorsPool.length) {
+    document.getElementById('main-area').innerHTML = `
+      ${backBtn()}
+      <div class="mode-badge"><span class="dot"></span>❌ Ошибки</div>
+      <div class="errors-empty">
+        <div style="font-size:3rem;margin-bottom:1rem">🎉</div>
+        Нет вопросов с преобладающими ошибками.<br>Отличная работа!
+      </div>`;
+    return;
+  }
+
+  errorsIdx = 0;
+  renderErrorsCard();
+}
+
+function renderErrorsCard() {
+  if (errorsIdx >= errorsPool.length) {
+    document.getElementById('main-area').innerHTML = `
+      ${backBtn()}
+      <div class="mode-badge"><span class="dot"></span>❌ Ошибки</div>
+      <div class="errors-empty">
+        <div style="font-size:3rem;margin-bottom:1rem">✅</div>
+        Проработано все ошибочные вопросы!
+      </div>
+      <div class="btn-row" style="margin-top:1rem">
+        <button class="btn btn-primary" onclick="renderErrors()">↺ Повторить ошибки</button>
+      </div>`;
+    return;
+  }
+
+  const { q, i } = errorsPool[errorsIdx];
+
+  document.getElementById('main-area').innerHTML = `
+    ${backBtn()}
+    <div class="mode-badge"><span class="dot"></span>❌ Ошибки (${errorsIdx + 1}/${errorsPool.length})</div>
+    ${progressBar(errorsIdx + 1, errorsPool.length)}
+    <div class="card">
+      <div class="card-label">
+        <span>ВОПРОС ${i + 1}</span>
+        <span style="color:var(--wrong)">✗${q.stats.wrong} ✓${q.stats.correct}</span>
+      </div>
+      <div class="question-text">${esc(q.question)}</div>
+      <div class="answer-box" id="err-answer-box">
+        <div class="answer-label">// ПРАВИЛЬНЫЙ ОТВЕТ</div>
+        <div class="answer-text">${esc(q.answer)}</div>
+      </div>
+      <div class="btn-row" style="margin-bottom:0.75rem">
+        <button class="btn btn-ghost" onclick="errToggleAnswer()">👁 Показать ответ</button>
+      </div>
+      <div class="btn-row" id="err-mark-row" style="display:none">
+        <button class="btn btn-success" onclick="errMark(${i}, true)">✓ Теперь знаю</button>
+        <button class="btn btn-danger"  onclick="errMark(${i}, false)">✗ Не знаю</button>
+      </div>
+    </div>`;
+}
+
+function errToggleAnswer() {
+  const box = document.getElementById('err-answer-box');
+  const row = document.getElementById('err-mark-row');
+  box.classList.add('visible');
+  if (row) row.style.display = 'flex';
+}
+
+function errMark(qIdx, knew) {
+  questions[qIdx].stats.seen++;
+  if (knew) questions[qIdx].stats.correct++; else questions[qIdx].stats.wrong++;
+  saveData();
+  errorsIdx++;
+  renderErrorsCard();
+}
+
+// ════════════════════════════════════════════════════
+//  📋 LIST MODE
+// ════════════════════════════════════════════════════
+function renderList(filter = '') {
+  const area = document.getElementById('main-area');
+
+  if (!document.getElementById('search-input')) {
+    area.innerHTML = `
+      ${backBtn()}
+      <input class="search-input" id="search-input" type="text" placeholder="🔍 Поиск по вопросам...">
+      <div class="q-list" id="q-list"></div>`;
+    const inp = document.getElementById('search-input');
+    inp.addEventListener('input', () => renderList(inp.value));
+    inp.value = filter;
+    inp.focus();
+  }
+
+  const f = (document.getElementById('search-input')?.value || filter).toLowerCase();
+  const items = questions
+    .map((q, i) => ({ q, i }))
+    .filter(({ q }) => !f || q.question.toLowerCase().includes(f) || q.answer.toLowerCase().includes(f));
+
+  const list = document.getElementById('q-list');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty"><div class="big">🔍</div>Ничего не найдено</div>`;
+  } else {
+    list.innerHTML = items.map(({ q, i }) => {
+      const dotClass = q.stats.seen === 0 ? '' : q.stats.correct > q.stats.wrong ? 'ok' : 'bad';
+      return `
+        <div class="q-list-item" onclick="openModal(${i})">
+          <span class="q-idx">${i + 1}</span>
+          <span class="q-text">${esc(q.question)}</span>
+          <span class="q-dot ${dotClass}"></span>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ════════════════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════════════════
+function openModal(idx) {
+  const q = questions[idx];
+  document.getElementById('modal-q').textContent = q.question;
+  document.getElementById('modal-a').textContent = q.answer;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+</script>
+</body>
+</html>
