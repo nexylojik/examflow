@@ -144,7 +144,22 @@ window._pdfJsAvailable = false;
   }
   @keyframes blobDrift {
     from { transform: translate(0,0) scale(1); }
-    to   { transform: translate(40px, 30px) scale(1.08); }
+    to   { transform: translate(40px, 30px) scale(1.12); }
+  }
+
+  /* third ambient blob — center glow */
+  .ambient-mid {
+    position: fixed;
+    width: 400px; height: 400px;
+    top: 35%; left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(circle, var(--accent3) 0%, transparent 70%);
+    animation: blobDrift 24s ease-in-out infinite alternate-reverse;
   }
 
   /* all content above blobs */
@@ -184,7 +199,9 @@ window._pdfJsAvailable = false;
     line-height: 1;
     cursor: pointer;
     user-select: none;
+    transition: opacity 0.15s;
   }
+  .logo:hover { opacity: 0.8; }
   .logo span { color: var(--accent); }
 
   .header-right {
@@ -258,7 +275,8 @@ window._pdfJsAvailable = false;
     height: 100%;
     background: var(--accent);
     border-radius: 99px;
-    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 6px rgba(200,240,77,0.5);
   }
   .info-pct {
     font-family: var(--mono);
@@ -306,9 +324,10 @@ window._pdfJsAvailable = false;
   .landing-hero {
     text-align: center;
     padding: 2.5rem 0 2rem;
-    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(200,240,77,0.07) 0%, transparent 70%);
+    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(200,240,77,0.09) 0%, transparent 70%);
     margin: -1.5rem -1.5rem 2rem;
     padding: 3rem 1.5rem 2rem;
+    animation: heroReveal 0.6s cubic-bezier(0.22,1,0.36,1) both;
   }
 
   .landing-logo {
@@ -447,37 +466,58 @@ window._pdfJsAvailable = false;
 
   /* import settings */
   .import-settings {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .settings-toggle {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: none;
-    border: none;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: var(--glass-shadow);
+    background-image: linear-gradient(135deg, var(--glass-shine) 0%, transparent 55%);
     color: var(--muted);
     font-family: var(--mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     cursor: pointer;
-    padding: 0;
-    transition: color 0.15s;
-    margin-bottom: 0.75rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    transition: border-color 0.18s, color 0.18s, background 0.18s;
+    margin-bottom: 0;
+    width: 100%;
+    text-align: left;
   }
-  .settings-toggle:hover { color: var(--text); }
-  .settings-toggle .arr { transition: transform 0.2s; }
+  .settings-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .settings-toggle.open  { border-color: var(--accent); color: var(--accent); }
+  .settings-toggle .arr {
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+    font-size: 0.6rem;
+    opacity: 0.7;
+  }
   .settings-toggle.open .arr { transform: rotate(90deg); }
 
   .settings-body {
     display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
     border-radius: var(--radius);
     padding: 1rem 1.25rem;
-    gap: 0.75rem;
-    flex-direction: column;
+    margin-top: 0.5rem;
+    animation: fadeUp 0.2s ease;
   }
-  .settings-body.open { display: flex; }
+  .settings-body.open {
+    display: flex;
+  }
 
   .radio-group { display: flex; flex-direction: column; gap: 0.4rem; }
   .radio-label {
@@ -488,8 +528,19 @@ window._pdfJsAvailable = false;
     font-size: 0.8rem;
     color: var(--text);
     cursor: pointer;
+    pointer-events: auto; /* always clickable */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    padding: 0.15rem 0;
   }
-  .radio-label input[type="radio"] { accent-color: var(--accent); }
+  .radio-label input[type="radio"] {
+    accent-color: var(--accent);
+    pointer-events: auto;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
 
   .custom-delim-wrap {
     display: none;
@@ -546,13 +597,22 @@ window._pdfJsAvailable = false;
     border-radius: 14px;
     padding: 1.5rem 1.25rem;
     cursor: pointer;
-    transition: all 0.18s;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.25s cubic-bezier(0.22,1,0.36,1);
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     position: relative;
     overflow: hidden;
+    animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
   }
+  /* Stagger tile appearances */
+  .mode-tile:nth-child(1) { animation-delay: 0.04s; }
+  .mode-tile:nth-child(2) { animation-delay: 0.08s; }
+  .mode-tile:nth-child(3) { animation-delay: 0.12s; }
+  .mode-tile:nth-child(4) { animation-delay: 0.16s; }
+  .mode-tile:nth-child(5) { animation-delay: 0.20s; }
+  .mode-tile:nth-child(6) { animation-delay: 0.24s; }
+  .mode-tile:nth-child(7) { animation-delay: 0.28s; }
   .mode-tile::before {
     content: '';
     position: absolute;
@@ -562,9 +622,9 @@ window._pdfJsAvailable = false;
   }
   .mode-tile:hover {
     border-color: var(--accent);
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.01);
     background: var(--glass-bg2);
-    box-shadow: var(--glass-shadow), 0 0 0 1px var(--accent) inset;
+    box-shadow: var(--glass-shadow), 0 0 0 1px var(--accent) inset, 0 8px 24px rgba(0,0,0,0.3);
   }
   .mode-tile.disabled-tile {
     opacity: 0.35;
@@ -575,6 +635,7 @@ window._pdfJsAvailable = false;
     border-color: var(--accent);
     background: var(--glass-bg2);
     box-shadow: var(--glass-shadow), 0 0 0 1px var(--accent) inset;
+    animation: glowPulse 3s ease-in-out infinite;
   }
 
   .tile-icon { font-size: 1.75rem; }
@@ -644,7 +705,14 @@ window._pdfJsAvailable = false;
     border-radius: var(--radius);
     padding: 0.875rem;
     text-align: center;
+    transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s;
+    animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
   }
+  .stat-mini:nth-child(1) { animation-delay: 0.05s; }
+  .stat-mini:nth-child(2) { animation-delay: 0.10s; }
+  .stat-mini:nth-child(3) { animation-delay: 0.15s; }
+  .stat-mini:nth-child(4) { animation-delay: 0.20s; }
+  .stat-mini:hover { transform: translateY(-2px); box-shadow: var(--glass-shadow), 0 4px 16px rgba(0,0,0,0.2); }
   .stat-mini-val {
     font-size: 1.4rem;
     font-weight: 800;
@@ -665,7 +733,7 @@ window._pdfJsAvailable = false;
   /* ══════════════════════════════════════
      MODE AREA (rendered content)
   ══════════════════════════════════════ */
-  #mode-area { animation: fadeUp 0.2s ease; }
+  #mode-area { animation: fadeUp 0.28s cubic-bezier(0.22,1,0.36,1); }
   #mode-area:not(:empty) {
     margin-top: 2rem;
     padding-top: 2rem;
@@ -673,8 +741,98 @@ window._pdfJsAvailable = false;
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(14px) scale(0.99); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── CARD SLIDE-IN ── */
+  @keyframes cardSlideIn {
+    from { opacity: 0; transform: translateY(22px) scale(0.975); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── OPTION STAGGER ── */
+  @keyframes optionIn {
+    from { opacity: 0; transform: translateX(-18px) scale(0.97); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+  }
+
+  /* ── HERO ENTRANCE ── */
+  @keyframes heroReveal {
+    from { opacity: 0; transform: translateY(-10px); }
     to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CORRECT: bounce + glow ── */
+  @keyframes correctPop {
+    0%   { transform: scale(1); }
+    25%  { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(77,205,143,0.25); }
+    55%  { transform: scale(0.97); }
+    75%  { transform: scale(1.02); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0px rgba(77,205,143,0); }
+  }
+  @keyframes numBounce {
+    0%,100% { transform: scale(1) rotate(0deg); }
+    30%     { transform: scale(1.4) rotate(-10deg); }
+    60%     { transform: scale(0.88) rotate(5deg); }
+    80%     { transform: scale(1.05) rotate(-2deg); }
+  }
+
+  /* ── WRONG: shake ── */
+  @keyframes wrongShake {
+    0%,100% { transform: translateX(0); }
+    15%     { transform: translateX(-8px); }
+    30%     { transform: translateX(7px); }
+    45%     { transform: translateX(-6px); }
+    60%     { transform: translateX(5px); }
+    75%     { transform: translateX(-3px); }
+    90%     { transform: translateX(2px); }
+  }
+
+  /* ── TOAST SPRING ── */
+  @keyframes toastSpring {
+    0%   { opacity: 0; transform: translateY(28px) scale(0.9); }
+    50%  { opacity: 1; transform: translateY(-5px) scale(1.03); }
+    70%  { transform: translateY(2px) scale(0.99); }
+    85%  { transform: translateY(-1px) scale(1.005); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  /* ── SEGMENT POP ── */
+  @keyframes segPop {
+    0%   { transform: scaleY(0.2); opacity: 0.3; }
+    55%  { transform: scaleY(1.35); }
+    75%  { transform: scaleY(0.9); }
+    100% { transform: scaleY(1); opacity: 1; }
+  }
+
+  /* ── BUTTON PRESS ── */
+  .btn { touch-action: manipulation; }
+  .btn:active { transform: scale(0.95); transition: transform 0.08s; }
+  .mcq-option:active:not(:disabled) { transform: scale(0.982); transition: transform 0.08s; }
+
+  /* ── RIPPLE ON CORRECT ── */
+  @keyframes rippleOut {
+    from { box-shadow: 0 0 0 0px rgba(77,205,143,0.55); }
+    to   { box-shadow: 0 0 0 20px rgba(77,205,143,0); }
+  }
+
+  /* ── SCORE COUNTER ── */
+  @keyframes countUp {
+    from { transform: translateY(8px) scale(0.85); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* ── SHIMMER on stat cards ── */
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* ── GLOW PULSE ── */
+  @keyframes glowPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(200,240,77,0); }
+    50%     { box-shadow: 0 0 16px 4px rgba(200,240,77,0.15); }
   }
 
   /* ══════════════════════════════════════
@@ -691,7 +849,14 @@ window._pdfJsAvailable = false;
     border-radius: 16px;
     padding: 2rem;
     margin-bottom: 1rem;
-    animation: fadeUp 0.2s ease;
+    animation: cardSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+  }
+  /* Subtle inner glow on card hover */
+  .card:hover {
+    box-shadow: var(--glass-shadow), 0 0 0 1px rgba(200,240,77,0.06) inset;
   }
 
   .card-label {
@@ -704,6 +869,19 @@ window._pdfJsAvailable = false;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding-bottom: 0.75rem;
+    position: relative;
+  }
+  /* Animated accent underline matching MCQ style */
+  .card-label::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent3) 40%, transparent 100%);
+    opacity: 0.4;
+    border-radius: 99px;
   }
 
   .question-text {
@@ -721,8 +899,18 @@ window._pdfJsAvailable = false;
     margin-bottom: 1rem;
     display: none;
     border-left: 3px solid var(--accent);
+    position: relative;
+    overflow: hidden;
   }
-  .answer-box.visible { display: block; animation: fadeUp 0.2s ease; }
+  .answer-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.5;
+  }
+  .answer-box.visible { display: block; animation: cardSlideIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
   .answer-label {
     font-family: var(--mono);
     font-size: 0.7rem;
@@ -792,8 +980,12 @@ window._pdfJsAvailable = false;
      PROGRESS BAR
   ══════════════════════════════════════ */
   .progress-wrap { margin-bottom: 1.5rem; }
-  .progress-bar { height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
-  .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s cubic-bezier(.4,0,.2,1); }
+  .progress-bar { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; background: var(--accent); border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 8px rgba(200,240,77,0.4);
+  }
   .progress-meta {
     display: flex; justify-content: space-between;
     font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem;
@@ -811,8 +1003,13 @@ window._pdfJsAvailable = false;
     box-shadow: var(--glass-shadow);
     background-image: linear-gradient(135deg, var(--glass-shine) 0%, transparent 55%);
     border-radius: var(--radius); padding: 1.25rem; text-align: center;
+    animation: fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both;
   }
-  .stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.25rem; }
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+  .stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.25rem; animation: countUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
   .stat-label { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.07em; }
   .hardest-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--muted); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
   .hardest-item {
@@ -837,20 +1034,23 @@ window._pdfJsAvailable = false;
   }
   .search-input:focus { border-color: var(--accent); }
   .search-input::placeholder { color: var(--muted); }
-  .q-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .q-list { display: flex; flex-direction: column; gap: 0.35rem; }
   .q-list-item {
     background: var(--glass-bg); border: 1px solid var(--glass-border);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border-radius: var(--radius);
-    padding: 0.875rem 1rem; cursor: pointer; transition: all 0.15s;
+    padding: 0.875rem 1rem; cursor: pointer;
+    transition: border-color 0.18s, transform 0.2s cubic-bezier(0.22,1,0.36,1), background 0.18s;
     display: flex; align-items: center; gap: 0.75rem;
+    animation: fadeUp 0.25s cubic-bezier(0.22,1,0.36,1) both;
   }
-  .q-list-item:hover { border-color: var(--accent); transform: translateX(3px); background: var(--glass-bg2); }
+  .q-list-item:hover { border-color: var(--accent); transform: translateX(5px); background: var(--glass-bg2); }
   .q-list-item .q-idx { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); min-width: 24px; }
   .q-list-item .q-text { flex: 1; font-size: 0.875rem; }
-  .q-list-item .q-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
-  .q-list-item .q-dot.ok  { background: var(--correct); }
-  .q-list-item .q-dot.bad { background: var(--wrong); }
+  .q-list-item .q-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: transform 0.2s; }
+  .q-list-item:hover .q-dot { transform: scale(1.4); }
+  .q-list-item .q-dot.ok  { background: var(--correct); box-shadow: 0 0 6px rgba(77,205,143,0.4); }
+  .q-list-item .q-dot.bad { background: var(--wrong); box-shadow: 0 0 6px rgba(255,107,107,0.4); }
 
   /* ══════════════════════════════════════
      TEST MODE
@@ -859,12 +1059,14 @@ window._pdfJsAvailable = false;
   .test-option {
     background: var(--surface2); border: 2px solid var(--border);
     border-radius: var(--radius); padding: 1rem 1.25rem;
-    cursor: pointer; transition: all 0.15s;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s;
     font-size: 0.9rem; line-height: 1.4; text-align: left;
+    position: relative; overflow: hidden;
   }
-  .test-option:hover { border-color: var(--accent3); color: var(--accent3); }
-  .test-option.selected-correct { border-color: var(--correct); background: #0d2018; color: var(--correct); }
-  .test-option.selected-wrong   { border-color: var(--wrong);   background: #200d0d; color: var(--wrong); }
+  .test-option:hover { border-color: var(--accent3); color: var(--accent3); transform: translateX(3px); box-shadow: -3px 0 0 var(--accent3); }
+  .test-option.selected-correct { border-color: var(--correct); background: #0d2018; color: var(--correct); animation: correctPop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  .test-option.selected-wrong   { border-color: var(--wrong);   background: #200d0d; color: var(--wrong); animation: wrongShake 0.42s ease both; }
   .test-option.reveal-correct   { border-color: var(--correct); background: #0d2018; color: var(--correct); }
   .test-option:disabled { cursor: not-allowed; }
 
@@ -987,12 +1189,23 @@ window._pdfJsAvailable = false;
   .exam-timer.warning { color: var(--wrong); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
 
-  .exam-results { animation: fadeUp 0.3s ease; }
+  .exam-results { animation: cardSlideIn 0.35s cubic-bezier(0.22,1,0.36,1); }
   .exam-result-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    position: relative;
+    transition: background 0.15s;
   }
-  .exam-result-row:last-child { border-bottom: none; }
+  .exam-result-row::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 1rem; right: 1rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+  .exam-result-row:last-child::after { display: none; }
+  .exam-result-row:hover { background: var(--glass-bg); }
   .exam-result-q { flex: 1; color: var(--muted); }
   .exam-result-badge { padding: 0.2rem 0.5rem; border-radius: 6px; font-family: var(--mono); font-size: 0.7rem; font-weight: 700; }
   .badge-ok  { background: #0d2018; color: var(--correct); }
@@ -1156,9 +1369,32 @@ window._pdfJsAvailable = false;
   /* ══════════════════════════════════════
      RESPONSIVE
   ══════════════════════════════════════ */
-  /* ══════════════════════════════════════
-     IMPORT COLLAPSIBLE
-  ══════════════════════════════════════ */
+  /* ── KEYBOARD HINTS ── */
+  .kbd-hint {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    opacity: 0.6;
+    margin-top: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+    font-size: 0.6rem;
+    min-width: 1.4rem;
+    color: var(--muted);
+  }
+  @media (pointer: coarse) { .kbd-hint { display: none; } }
   .import-collapsible {
     display: block;
     overflow: hidden;
@@ -1327,7 +1563,7 @@ window._pdfJsAvailable = false;
     border-radius: var(--radius);
     padding: 0.875rem 1rem;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: border-color 0.18s, background 0.18s, transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s;
     font-family: var(--font);
     font-size: 0.95rem;
     color: var(--text);
@@ -1335,11 +1571,23 @@ window._pdfJsAvailable = false;
     line-height: 1.45;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Subtle shimmer on idle options */
+  .mcq-option::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+    pointer-events: none;
   }
   .mcq-option:hover:not(:disabled) {
     border-color: var(--accent3);
     color: var(--accent3);
-    background: var(--surface);
+    background: rgba(107,197,255,0.06);
+    transform: translateX(3px);
+    box-shadow: -3px 0 0 var(--accent3);
   }
   .mcq-option:disabled { cursor: not-allowed; }
 
@@ -1348,6 +1596,7 @@ window._pdfJsAvailable = false;
     border-color: var(--accent3);
     background: rgba(107,197,255,0.08);
     color: var(--accent3);
+    animation: correctPop 0.3s cubic-bezier(0.22,1,0.36,1) both;
   }
   .mcq-option.mcq-selected .mcq-opt-num {
     background: var(--accent3);
@@ -1388,16 +1637,19 @@ window._pdfJsAvailable = false;
     border-color: var(--correct);
     background: rgba(77,205,143,0.08);
     color: var(--correct);
+    animation: correctPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both, rippleOut 0.6s ease-out both;
   }
   .mcq-option.mcq-correct .mcq-opt-num {
     background: var(--correct);
     border-color: var(--correct);
     color: #0d2018;
+    animation: numBounce 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .mcq-option.mcq-wrong {
     border-color: var(--wrong);
     background: rgba(255,107,107,0.08);
     color: var(--wrong);
+    animation: wrongShake 0.42s ease both;
   }
   .mcq-option.mcq-wrong .mcq-opt-num {
     background: var(--wrong);
@@ -1406,19 +1658,57 @@ window._pdfJsAvailable = false;
   }
   .mcq-option.mcq-dimmed {
     opacity: 0.35;
+    transition: opacity 0.3s ease;
   }
 
-  /* Feedback bar */
-  .mcq-feedback {
-    border-radius: var(--radius);
-    padding: 0.875rem 1rem;
+  /* Feedback toast */
+  .mcq-toast {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 5rem;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
     font-weight: 700;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    animation: fadeUp 0.2s ease;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    z-index: 200;
+    pointer-events: none;
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    max-width: 600px;
+    margin: 0 auto;
+    animation: toastSpring 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
-  .mcq-fb-ok  { background: rgba(77,205,143,0.12); border: 1px solid var(--correct); color: var(--correct); }
-  .mcq-fb-bad { background: rgba(255,107,107,0.10); border: 1px solid var(--wrong);  color: var(--wrong); }
+  .mcq-toast.hidden {
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    animation: none;
+  }
+  .mcq-toast-ok  {
+    background: rgba(20, 60, 35, 0.92);
+    border: 1px solid var(--correct);
+    color: var(--correct);
+  }
+  .mcq-toast-bad {
+    background: rgba(60, 15, 15, 0.92);
+    border: 1px solid var(--wrong);
+    color: var(--wrong);
+  }
+  @media (min-width: 768px) {
+    .mcq-toast {
+      bottom: 2rem;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: 480px;
+    }
+    .mcq-toast.hidden {
+      transform: translateX(-50%) translateY(12px);
+    }
+  }
 
   /* MCQ Session progress bar */
   .mcq-progress-bar-wrap {
@@ -1427,6 +1717,7 @@ window._pdfJsAvailable = false;
   /* MCQ card — scrollable on desktop so next-btn stays in view */
   .mcq-question-card {
     scroll-margin-top: 70px;
+    animation: cardSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   @media (min-width: 768px) {
     .mcq-question-card {
@@ -1500,24 +1791,44 @@ window._pdfJsAvailable = false;
     .mcq-options { gap: 0.5rem; }
     .card { padding: 1.25rem; }
     .question-text { font-size: clamp(0.95rem, 4vw, 1.2rem); }
-    /* Make MCQ next-row fixed at bottom of viewport on mobile */
+    /* Fixed bottom bar contains both toast and next button */
     #mcq-next-row.visible {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
       background: var(--glass-bg2);
-      backdrop-filter: blur(16px) saturate(1.6);
-      -webkit-backdrop-filter: blur(16px) saturate(1.6);
+      backdrop-filter: blur(20px) saturate(1.6);
+      -webkit-backdrop-filter: blur(20px) saturate(1.6);
       border-top: 1px solid var(--glass-border);
       padding: 0.75rem 1rem;
       margin-top: 0 !important;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.35);
-      z-index: 50;
+      z-index: 150;
+      flex-direction: column;
+      gap: 0.5rem;
     }
-    /* Add bottom padding to card so fixed bar doesn't overlap last option */
-    .mcq-question-card.next-visible {
-      padding-bottom: 5rem !important;
+    /* Toast inside the bar on mobile */
+    .mcq-toast {
+      position: static;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      width: 100%;
+      box-shadow: none;
+      border-radius: 10px;
+      padding: 0.65rem 0.875rem;
+      font-size: 0.88rem;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      margin: 0;
+    }
+    .mcq-toast.hidden {
+      display: none;
+    }
+    #mcq-next-row.visible .mcq-next-btns {
+      display: flex;
+      gap: 0.5rem;
     }
   }
 
@@ -1607,6 +1918,7 @@ window._pdfJsAvailable = false;
 </style>
 </head>
 <body>
+<div class="ambient-mid"></div>
 
 <!-- ════════════════ HEADER ════════════════ -->
 <header class="site-header">
@@ -1708,9 +2020,9 @@ window._pdfJsAvailable = false;
           <!-- ⚙ Import settings -->
           <div class="import-settings">
             <button class="settings-toggle" id="settings-toggle" onclick="toggleSettings()">
-              <span class="arr">▶</span> ⚙ Настройки импорта
+              <span class="arr">▶</span> ⚙ Разделение вопросов
             </button>
-            <div class="settings-body" id="settings-body">
+            <div class="settings-body" id="settings-body" style="display:none;max-height:none;opacity:1;pointer-events:auto;margin-top:0.5rem;padding:1rem 1.25rem;background:var(--glass-bg);border:1px solid var(--glass-border)">
               <div class="radio-group">
                 <label class="radio-label">
                   <input type="radio" name="delim" value="auto" checked onchange="onDelimChange(this)">
@@ -1745,11 +2057,11 @@ window._pdfJsAvailable = false;
             <textarea id="mcq-textarea-landing" style="width:100%;min-height:160px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;color:var(--text);font-family:var(--mono);font-size:0.82rem;line-height:1.7;outline:none;resize:vertical;transition:border-color .15s" placeholder="Вставьте тест сюда..."></textarea>
 
             <!-- delimiter settings -->
-            <div class="import-settings" style="margin-top:0.75rem;margin-bottom:0">
+            <div class="import-settings" style="margin-top:0.75rem">
               <button class="settings-toggle" id="mcq-settings-toggle" onclick="toggleMcqSettings()">
                 <span class="arr">▶</span> ⚙ Разделение вопросов
               </button>
-              <div class="settings-body" id="mcq-settings-body">
+              <div class="settings-body" id="mcq-settings-body" style="display:none;max-height:none;opacity:1;pointer-events:auto;margin-top:0.5rem;padding:1rem 1.25rem;background:var(--glass-bg);border:1px solid var(--glass-border)">
                 <div class="radio-group">
                   <label class="radio-label">
                     <input type="radio" name="mcq-delim" value="auto" checked onchange="onMcqDelimChange(this)">
@@ -1847,7 +2159,7 @@ window._pdfJsAvailable = false;
 
 <strong>Вопрос 2.</strong> Отряд вши
 Постоянные эктопаразиты, питаются кровью...</div>
-    <p>Или используйте <strong>кастомный разделитель</strong> (⚙ Настройки импорта), например <code>---</code>:</p>
+    <p>Или используйте <strong>кастомный разделитель</strong> (⚙ Разделение вопросов), например <code>---</code>:</p>
     <div class="docs-codeblock">Что такое фагоцитоз?
 Процесс поглощения клеткой твёрдых частиц
 <strong>---</strong>
@@ -1935,6 +2247,23 @@ window._pdfJsAvailable = false;
     <h2>Экспорт и сброс</h2>
     <p><code>↓ Экспорт</code> — скачивает карточки в <code>.txt</code>, совместимом с повторным импортом.<br>
     <code>↩ Сброс</code> — удаляет карточки и статистику после подтверждения. Необратимо. MCQ-тест очищается отдельно кнопкой «✕ Очистить» внутри MCQ.</p>
+
+    <h2>Клавиатурные сочетания</h2>
+    <table class="docs-table">
+      <tr><th>Режим</th><th>Клавиша</th><th>Действие</th></tr>
+      <tr><td>Карточки</td><td><code>Space / Enter</code></td><td>Показать ответ</td></tr>
+      <tr><td>Карточки</td><td><code>→</code></td><td>Знал</td></tr>
+      <tr><td>Карточки</td><td><code>←</code></td><td>Не знал</td></tr>
+      <tr><td>Ввод ответа</td><td><code>Enter</code></td><td>Проверить / Далее</td></tr>
+      <tr><td>Тест (Quiz)</td><td><code>1–4</code></td><td>Выбрать вариант</td></tr>
+      <tr><td>Тест (Quiz)</td><td><code>Enter</code></td><td>Следующий вопрос</td></tr>
+      <tr><td>MCQ</td><td><code>1–9</code></td><td>Выбрать вариант</td></tr>
+      <tr><td>MCQ</td><td><code>Enter</code></td><td>Следующий вопрос</td></tr>
+      <tr><td>Экзамен</td><td><code>Space</code></td><td>Показать эталон</td></tr>
+      <tr><td>Экзамен</td><td><code>1 / →</code></td><td>Знал</td></tr>
+      <tr><td>Экзамен</td><td><code>2 / ←</code></td><td>Не знал</td></tr>
+    </table>
+    <p>Клавиатурные подсказки отображаются в интерфейсе (на устройствах с мышью). На тачскрин-устройствах скрыты автоматически.</p>
 
     <div class="docs-close-row">
       <button class="modal-close" onclick="closeDocs()">Закрыть</button>
@@ -2494,8 +2823,9 @@ function exportToTxt() {
 function toggleMcqSettings() {
   const body = document.getElementById('mcq-settings-body');
   const btn  = document.getElementById('mcq-settings-toggle');
-  body.classList.toggle('open');
-  btn.classList.toggle('open');
+  const isOpen = body.style.display === 'flex';
+  body.style.display = isOpen ? 'none' : 'flex';
+  btn.classList.toggle('open', !isOpen);
 }
 
 function onMcqDelimChange(radio) {
@@ -2506,8 +2836,9 @@ function onMcqDelimChange(radio) {
 function toggleSettings() {
   const body = document.getElementById('settings-body');
   const btn  = document.getElementById('settings-toggle');
-  body.classList.toggle('open');
-  btn.classList.toggle('open');
+  const isOpen = body.style.display === 'flex';
+  body.style.display = isOpen ? 'none' : 'flex';
+  btn.classList.toggle('open', !isOpen);
 }
 
 function onDelimChange(radio) {
@@ -2652,9 +2983,10 @@ function renderFlashcard() {
         <button class="btn btn-ghost" onclick="fcToggleAnswer()" id="fc-show-btn">👁 Показать ответ</button>
       </div>
       <div class="btn-row" id="fc-mark-row" style="display:none">
-        <button class="btn btn-success" onclick="fcMark(true)">✓ Знал</button>
-        <button class="btn btn-danger"  onclick="fcMark(false)">✗ Не знал</button>
+        <button class="btn btn-success" onclick="fcMark(true)" id="fc-knew-btn">✓ Знал <span style="font-family:var(--mono);font-size:0.7rem;opacity:0.6">[→]</span></button>
+        <button class="btn btn-danger"  onclick="fcMark(false)" id="fc-wrong-btn">✗ Не знал <span style="font-family:var(--mono);font-size:0.7rem;opacity:0.6">[←]</span></button>
       </div>
+      <div class="kbd-hint">Клавиши: <span class="kbd">Space</span> — показать ответ · <span class="kbd">→</span> Знал · <span class="kbd">←</span> Не знал</div>
     </div>`;
 }
 
@@ -2711,8 +3043,8 @@ function renderInput() {
       </div>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="inpNext()">⟳ Пропустить</button>
-        <button class="btn btn-info"  onclick="checkInputMode()">Проверить</button>
-        <button class="btn btn-primary" id="inp-next-btn" style="display:none" onclick="inpNext()">Далее →</button>
+        <button class="btn btn-info"  onclick="checkInputMode()" id="input-check-btn">Проверить <span style="font-family:var(--mono);font-size:0.7rem;opacity:0.6">[Enter]</span></button>
+        <button class="btn btn-primary" id="inp-next-btn" style="display:none" onclick="inpNext()">Далее → <span style="font-family:var(--mono);font-size:0.7rem;opacity:0.6">[Enter]</span></button>
       </div>
     </div>`;
 
@@ -2742,8 +3074,11 @@ function checkInputMode() {
   }
   document.getElementById('inp-answer-box').classList.add('visible');
   const nextBtn = document.getElementById('inp-next-btn');
-  if (nextBtn) nextBtn.style.display = '';
+  if (nextBtn) { nextBtn.style.display = ''; nextBtn.id = 'input-next-btn'; }
   inp.disabled = true;
+  // hide check button
+  const checkBtn = document.getElementById('input-check-btn');
+  if (checkBtn) checkBtn.style.display = 'none';
   saveData();
 }
 
@@ -2942,8 +3277,9 @@ function renderQuiz() {
       <div class="test-options">${opts}</div>
       <div class="check-result" id="quiz-result"></div>
       <div class="btn-row" style="margin-top:1rem">
-        <button class="btn btn-primary" id="quiz-next-btn" style="display:none" onclick="quizNext()">Следующий →</button>
+        <button class="btn btn-primary" id="quiz-next-btn" style="display:none" onclick="quizNext()">Следующий → <span style="font-family:var(--mono);font-size:0.7rem;opacity:0.6">[Enter]</span></button>
       </div>
+      <div class="kbd-hint">Клавиши: <span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span><span class="kbd">4</span> — выбор · <span class="kbd">Enter</span> — следующий</div>
     </div>`;
 }
 
@@ -3413,6 +3749,7 @@ function renderMcqHub() {
   // Clean up list scroll-to-top button if present
   const oldBtn = document.getElementById('mcq-scroll-top-btn');
   if (oldBtn) oldBtn.remove();
+  hideMcqToast();
   const saved = localStorage.getItem(LS_MCQ);
   const hasSaved = saved && JSON.parse(saved).length > 0;
 
@@ -3681,9 +4018,11 @@ function mcqProgressBarHtml() {
 
   const segs = mcqQuestions.map((_, i) => {
     if (i >= answered) return '<div class="mcq-seg mcq-seg-none"></div>';
+    const isLatest = i === answered - 1;
+    const anim = isLatest ? ' style="animation:segPop 0.35s cubic-bezier(0.22,1,0.36,1) both"' : '';
     return mcqResults[i].isRight
-      ? '<div class="mcq-seg mcq-seg-ok"></div>'
-      : '<div class="mcq-seg mcq-seg-bad"></div>';
+      ? `<div class="mcq-seg mcq-seg-ok"${anim}></div>`
+      : `<div class="mcq-seg mcq-seg-bad"${anim}></div>`;
   }).join('');
 
   return `<div class="mcq-progress-bar-wrap">
@@ -3740,13 +4079,24 @@ function renderMcqQuestion() {
       ${multiHint}
       <div class="mcq-options" id="mcq-options">${optionsHtml}</div>
       ${submitBtn}
-      <div id="mcq-feedback" style="display:none" class="mcq-feedback"></div>
-      <div class="btn-row" id="mcq-next-row" style="display:none;margin-top:1rem">
-        <button class="btn btn-primary" onclick="mcqNext()">→ Следующий</button>
+      <div class="kbd-hint">Клавиши: <span class="kbd">1</span>–<span class="kbd">9</span> — выбор варианта · <span class="kbd">Enter</span> — следующий</div>
+    </div>
+    <div class="btn-row" id="mcq-next-row" style="display:none;margin-top:1rem">
+      <div id="mcq-toast-slot"></div>
+      <div class="mcq-next-btns" style="display:flex;gap:0.5rem;width:100%">
+        <button class="btn btn-primary" onclick="mcqNext()">→ Следующий <span style="font-family:var(--mono);font-size:0.7rem;opacity:0.6">[Enter]</span></button>
         <button class="btn btn-ghost"   onclick="renderMcqHub()">↩ К списку</button>
       </div>
     </div>`;
   // Don't auto-scroll here — scrolling is handled by mcqNext() when user navigates
+
+  // Stagger-animate options
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.mcq-option').forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.animation = `optionIn 0.28s cubic-bezier(0.22,1,0.36,1) ${0.06 + i * 0.055}s both`;
+    });
+  });
 }
 
 // Multi-select toggle (before submit)
@@ -3871,37 +4221,64 @@ function mcqFinishAnswer(isRight, chosenNums) {
     }
   });
 
-  // feedback
-  const fb = document.getElementById('mcq-feedback');
-  fb.style.display = 'block';
-  fb.className = 'mcq-feedback ' + (isRight ? 'mcq-fb-ok' : 'mcq-fb-bad');
+  // feedback toast
+  let toastMsg = '';
   if (isRight) {
-    fb.innerHTML = `✓ Верно!${q.stats.wrongStreak === 0 && q.stats.correct > 1 ? ' 🔥 Серия!' : ''}`;
+    toastMsg = `✓ Верно!${q.stats.wrongStreak === 0 && q.stats.correct > 1 ? ' 🔥 Серия!' : ''}`;
   } else {
     const correctTexts = correctArr.map(n => {
       const opt = q.options.find(o => o.num === n);
-      return `<strong>${n}. ${esc(opt?.text || '')}</strong>`;
+      return `${n}. ${opt?.text || ''}`;
     }).join(', ');
-    fb.innerHTML = `✗ Неверно. Правильно: ${correctTexts}`;
+    toastMsg = `✗ Неверно — правильно: ${correctTexts}`;
     if (q.stats.wrongStreak >= 2) {
-      fb.innerHTML += `<br><span style="font-size:0.8rem;opacity:0.8">🔥 Добавлен в «Сложные вопросы»</span>`;
+      toastMsg += `<br><span style="font-size:0.82rem;opacity:0.85">🔥 Добавлен в «Сложные вопросы»</span>`;
     }
   }
+  showMcqToast(isRight, toastMsg);
 
   const nextRow = document.getElementById('mcq-next-row');
   nextRow.style.display = 'flex';
   nextRow.classList.add('visible');
-  const card = nextRow.closest('.mcq-question-card');
+  const card = document.querySelector('.mcq-question-card');
   if (card) card.classList.add('next-visible');
 
-  // On desktop scroll card so next btn visible
+  // On desktop scroll so next btn visible
   requestAnimationFrame(() => {
     const isMobile = window.innerWidth < 768;
-    if (!isMobile && card) card.scrollTop = card.scrollHeight;
+    if (!isMobile && nextRow) nextRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 }
 
+function showMcqToast(isRight, html) {
+  const cls = isRight ? 'mcq-toast mcq-toast-ok' : 'mcq-toast mcq-toast-bad';
+  // On mobile: render toast inside the fixed next-row bar
+  const slot = document.getElementById('mcq-toast-slot');
+  if (slot) {
+    slot.innerHTML = `<div class="${cls}">${html}</div>`;
+    return;
+  }
+  // Fallback: floating toast
+  let toast = document.getElementById('mcq-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'mcq-toast';
+    document.body.appendChild(toast);
+  }
+  toast.className = cls;
+  toast.innerHTML = html;
+  toast.classList.remove('hidden');
+}
+
+function hideMcqToast() {
+  const slot = document.getElementById('mcq-toast-slot');
+  if (slot) slot.innerHTML = '';
+  const toast = document.getElementById('mcq-toast');
+  if (toast) toast.classList.add('hidden');
+}
+
 function mcqNext() {
+  hideMcqToast();
   mcqPos++;
   if (mcqPos >= mcqQuestions.length) {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -3985,6 +4362,116 @@ function openDocs() {
   document.getElementById('docs-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+// ═══════════════════════════════════════════════
+//  ⌨ GLOBAL KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', function(e) {
+  // Don't fire if typing in an input/textarea
+  if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+  // Don't fire with modifier keys (except shift for numbers)
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+  const key = e.key;
+
+  // ── MCQ mode ──
+  if (currentMode === 'mcq' || (activeLandingTab === 'mcq' && document.querySelector('.mcq-options'))) {
+    // Digit keys 1–9: select MCQ option
+    if (/^[1-9]$/.test(key)) {
+      const num = parseInt(key);
+      const nextRow = document.getElementById('mcq-next-row');
+      if (nextRow && nextRow.style.display !== 'none') return; // already answered
+      const btn = document.getElementById('mcq-opt-' + num);
+      if (btn && !btn.disabled) {
+        e.preventDefault();
+        btn.click();
+      }
+      return;
+    }
+    // Enter: go to next question when answered
+    if (key === 'Enter') {
+      const nextRow = document.getElementById('mcq-next-row');
+      if (nextRow && (nextRow.style.display === 'flex' || nextRow.classList.contains('visible'))) {
+        e.preventDefault();
+        const nextBtn = nextRow.querySelector('.btn-primary');
+        if (nextBtn) nextBtn.click();
+      }
+      return;
+    }
+  }
+
+  // ── Quiz (test) mode ──
+  if (currentMode === 'quiz') {
+    if (/^[1-4]$/.test(key)) {
+      const i = parseInt(key) - 1;
+      const btn = document.getElementById('quiz-opt-' + i);
+      if (btn && !btn.disabled) {
+        e.preventDefault();
+        btn.click();
+      }
+      return;
+    }
+    if (key === 'Enter') {
+      const nextBtn = document.getElementById('quiz-next-btn');
+      if (nextBtn && nextBtn.style.display !== 'none') {
+        e.preventDefault();
+        nextBtn.click();
+      }
+      return;
+    }
+  }
+
+  // ── Flashcard mode ──
+  if (currentMode === 'flashcard') {
+    // Space / Enter: show answer or mark known
+    if (key === ' ' || key === 'Enter') {
+      e.preventDefault();
+      const showBtn = document.getElementById('fc-show-btn');
+      if (showBtn) { showBtn.click(); return; }
+      // After answer shown: Enter = knew, Backspace = didn't know
+      if (key === 'Enter') {
+        const knewBtn = document.getElementById('fc-knew-btn');
+        if (knewBtn) { knewBtn.click(); return; }
+      }
+    }
+    if (key === 'Backspace' || key === 'ArrowLeft') {
+      const wrongBtn = document.getElementById('fc-wrong-btn');
+      if (wrongBtn) { e.preventDefault(); wrongBtn.click(); return; }
+    }
+    if (key === 'ArrowRight') {
+      const knewBtn = document.getElementById('fc-knew-btn');
+      if (knewBtn) { e.preventDefault(); knewBtn.click(); return; }
+    }
+  }
+
+  // ── Input mode ──
+  if (currentMode === 'input') {
+    if (key === 'Enter') {
+      const checkBtn = document.getElementById('input-check-btn');
+      if (checkBtn) { e.preventDefault(); checkBtn.click(); return; }
+      const nextBtn = document.getElementById('input-next-btn');
+      if (nextBtn) { e.preventDefault(); nextBtn.click(); return; }
+    }
+  }
+
+  // ── Exam mode ──
+  if (currentMode === 'exam') {
+    if (key === ' ' || key === 'Enter') {
+      const showBtn = document.querySelector('#exam-actions .btn-ghost');
+      if (showBtn && !document.getElementById('exam-answer-box')?.classList.contains('visible')) {
+        e.preventDefault(); showBtn.click(); return;
+      }
+    }
+    if (key === '1' || key === 'ArrowRight') {
+      const knewBtn = document.querySelector('#exam-mark-row .btn-success');
+      if (knewBtn) { e.preventDefault(); knewBtn.click(); return; }
+    }
+    if (key === '2' || key === 'ArrowLeft') {
+      const wrongBtn = document.querySelector('#exam-mark-row .btn-danger');
+      if (wrongBtn) { e.preventDefault(); wrongBtn.click(); return; }
+    }
+  }
+});
 
 function closeDocs() {
   document.getElementById('docs-overlay').classList.remove('open');
