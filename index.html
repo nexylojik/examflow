@@ -7,10 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>
-// PDF.js availability flag - set to true only if loaded successfully
 window._pdfJsAvailable = false;
+window._mammothAvailable = false;
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" onerror="console.warn('PDF.js failed to load — PDF import will be unavailable')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" onerror="console.warn('PDF.js failed to load')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" crossorigin="anonymous" onload="window._mammothAvailable=true" onerror="console.warn('Mammoth.js failed to load — DOCX import unavailable')"></script>
 <style>
   :root {
     --bg: #0d0d0f;
@@ -1397,13 +1398,14 @@ window._pdfJsAvailable = false;
   @media (pointer: coarse) { .kbd-hint { display: none; } }
   .import-collapsible {
     display: block;
-    overflow: hidden;
+    overflow: visible;
     transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
-    max-height: 900px;
+    max-height: 9999px;
     opacity: 1;
   }
   .import-collapsible.collapsed {
     max-height: 0;
+    overflow: hidden;
     opacity: 0;
     pointer-events: none;
   }
@@ -2009,8 +2011,8 @@ window._pdfJsAvailable = false;
             <textarea id="import-textarea" placeholder="Вставьте билеты сюда...&#10;&#10;Вопрос 1. Название вопроса&#10;Текст ответа на первый вопрос...&#10;&#10;Вопрос 2. Название второго вопроса&#10;Текст ответа на второй вопрос..."></textarea>
             <div class="import-actions">
               <label class="btn-file-label">
-                📂 Выбрать файл (.txt)
-                <input type="file" id="file-input" accept=".txt">
+                📂 Файл (.txt / .pdf / .docx)
+                <input type="file" id="file-input" accept=".txt,.pdf,.docx">
               </label>
               <button class="btn-parse" onclick="parseAndLoad()">▶ Разобрать</button>
             </div>
@@ -2022,11 +2024,11 @@ window._pdfJsAvailable = false;
             <button class="settings-toggle" id="settings-toggle" onclick="toggleSettings()">
               <span class="arr">▶</span> ⚙ Разделение вопросов
             </button>
-            <div class="settings-body" id="settings-body" style="display:none;max-height:none;opacity:1;pointer-events:auto;margin-top:0.5rem;padding:1rem 1.25rem;background:var(--glass-bg);border:1px solid var(--glass-border)">
+            <div class="settings-body" id="settings-body" style="display:none">
               <div class="radio-group">
                 <label class="radio-label">
                   <input type="radio" name="delim" value="auto" checked onchange="onDelimChange(this)">
-                  Авто (Вопрос N.)
+                  Авто (определяется автоматически)
                 </label>
                 <label class="radio-label">
                   <input type="radio" name="delim" value="custom" onchange="onDelimChange(this)">
@@ -2081,8 +2083,8 @@ window._pdfJsAvailable = false;
 
             <div style="margin-top:0.75rem" class="btn-row">
               <label class="btn-file-label" style="flex:0 0 auto">
-                📂 Файл (.txt / .pdf)
-                <input type="file" id="mcq-file-input-landing" accept=".txt,.pdf" onchange="mcqFileLoadLanding(event)">
+                📂 Файл (.txt / .pdf / .docx)
+                <input type="file" id="mcq-file-input-landing" accept=".txt,.pdf,.docx" onchange="mcqFileLoadLanding(event)">
               </label>
               <button class="btn btn-primary" onclick="mcqParseAndStartLanding()">▶ Разобрать и начать</button>
             </div>
@@ -2150,25 +2152,53 @@ window._pdfJsAvailable = false;
     <div class="docs-tagline">// интерактивный тренажёр для экзаменов · Тимофей, 106 группа</div>
 
     <h2>Быстрый старт</h2>
-    <p>На главной экране выберите один из двух режимов — <strong>Карточки & Тренажёр</strong> или <strong>MCQ-Тест</strong>. Вставьте текст или загрузите <code>.txt</code> файл, нажмите кнопку запуска. Прогресс сохраняется автоматически.</p>
+    <p>На главной экране выберите один из двух режимов — <strong>Карточки & Тренажёр</strong> или <strong>MCQ-Тест</strong>. Вставьте текст или загрузите <code>.txt</code> / <code>.pdf</code> файл, нажмите кнопку запуска. Прогресс сохраняется автоматически в браузере.</p>
 
     <h2>Режим 1 — Карточки & Тренажёр</h2>
-    <p>Загрузите вопросы в формате <strong>Вопрос N.</strong> — каждый блок начинается с этого заголовка:</p>
+    <p>Парсер определяет формат <strong>автоматически</strong> — просто вставьте текст в любом из поддерживаемых форматов. Форматы проверяются по приоритету сверху вниз.</p>
+
+    <p><strong>① Заголовки «Вопрос N» / «Q N» / «Билет N»</strong> — самый надёжный формат:</p>
     <div class="docs-codeblock"><strong>Вопрос 1.</strong> Морфологические особенности насекомых
-Тело разделено на голову, грудь и брюшко...
+Тело разделено на голову, грудь и брюшко.
 
 <strong>Вопрос 2.</strong> Отряд вши
-Постоянные эктопаразиты, питаются кровью...</div>
-    <p>Или используйте <strong>кастомный разделитель</strong> (⚙ Разделение вопросов), например <code>---</code>:</p>
+Постоянные эктопаразиты, питаются кровью.
+Ответ: бескрылые насекомые, ротовой аппарат колюще-сосущий.</div>
+    <p>Внутри блока поддерживается маркер ответа: <code>Ответ:</code> / <code>О:</code> / <code>Answer:</code> / <code>A:</code>. Работают варианты заголовка: <code>В 1.</code>, <code>Q1:</code>, <code>Билет №3</code>.</p>
+
+    <p><strong>② Маркеры Q: / A: (или В: / О:)</strong></p>
+    <div class="docs-codeblock"><strong>Q:</strong> Что такое фагоцитоз?
+<strong>A:</strong> Процесс поглощения клеткой твёрдых частиц.
+
+<strong>В:</strong> Что такое пиноцитоз?
+<strong>О:</strong> Процесс поглощения клеткой жидкости.</div>
+
+    <p><strong>③ Нумерованные блоки (1. Вопрос / 1) Вопрос)</strong></p>
+    <div class="docs-codeblock"><strong>1.</strong> Что такое митоз?
+Способ деления клетки — образуются две дочерние клетки.
+
+<strong>2.</strong> Что такое мейоз?
+Деление, приводящее к четырём гаплоидным клеткам.</div>
+    <p>Парсер ищет самый длинный последовательный ряд номеров — пропуск одного номера не ломает разбор.</p>
+
+    <p><strong>④ Пустые строки как разделитель</strong></p>
+    <div class="docs-codeblock">Что такое хлорофилл?
+Зелёный пигмент растений, поглощающий свет для фотосинтеза.
+
+Что такое хлоропласт?
+Органелла, в которой происходит фотосинтез.</div>
+    <p>Первая строка блока → вопрос, остальные строки → ответ.</p>
+
+    <p><strong>⑤ Кастомный разделитель</strong> — задайте в ⚙ Разделение вопросов любой символ или строку, например <code>---</code>:</p>
     <div class="docs-codeblock">Что такое фагоцитоз?
-Процесс поглощения клеткой твёрдых частиц
+Процесс поглощения клеткой твёрдых частиц.
 <strong>---</strong>
 Что такое пиноцитоз?
-Процесс поглощения клеткой жидкости</div>
-    <p>Первая строка каждого блока → вопрос, остальное → ответ. При повторном импорте статистика по совпадающим вопросам сохраняется.</p>
+Процесс поглощения клеткой жидкости.</div>
+    <p>При повторном импорте статистика по совпадающим вопросам сохраняется (сравнение без учёта лишних пробелов).</p>
 
     <h2>Режим 2 — MCQ-Тест</h2>
-    <p>Загрузите готовые тесты с вариантами ответов. Поддерживается формат:</p>
+    <p>Загрузите готовые тесты с вариантами ответов:</p>
     <div class="docs-codeblock"><strong>1)</strong> Текст вопроса (может быть многострочным,
 продолжение склеивается автоматически)
 <strong>1.</strong> Первый вариант
@@ -2178,7 +2208,7 @@ window._pdfJsAvailable = false;
 
 <strong>2)</strong> Следующий вопрос...
 ...</div>
-    <p>Вопросы разделяются через <code>N)</code>, варианты ответа — через <code>N.</code>. Перенос слова через дефис (<code>вхо-<br>дить</code>) склеивается автоматически. После загрузки сразу запускается тест, статистика накапливается по сессиям.</p>
+    <p>Вопросы разделяются через <code>N)</code>, варианты ответа — через <code>N.</code>. Перенос слова через дефис (<code>вхо-<br>дить</code>) склеивается автоматически. Статистика накапливается между сессиями.</p>
 
     <h2>Способы загрузки</h2>
     <table class="docs-table">
@@ -2406,14 +2436,7 @@ const MODES = [
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
       fileInput.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-          document.getElementById('import-textarea').value = ev.target.result;
-          document.getElementById('file-name').textContent = '✓ Файл загружен: ' + file.name;
-        };
-        reader.readAsText(file, 'UTF-8');
+        loadFlashcardFile(e.target.files[0]);
       });
     }
 
@@ -2426,13 +2449,8 @@ const MODES = [
         e.preventDefault();
         importCard.classList.remove('drag-over');
         const file = e.dataTransfer.files[0];
-        if (!file || !file.name.endsWith('.txt')) { alert('Поддерживаются только .txt файлы.'); return; }
-        const reader = new FileReader();
-        reader.onload = ev => {
-          document.getElementById('import-textarea').value = ev.target.result;
-          document.getElementById('file-name').textContent = '✓ Файл загружен: ' + file.name;
-        };
-        reader.readAsText(file, 'UTF-8');
+        if (!file) return;
+        loadFlashcardFile(file);
       });
     }
 
@@ -2531,6 +2549,20 @@ function mcqFileLoadLanding(e) {
       }
     };
     reader.readAsArrayBuffer(file);
+  } else if (file.name.toLowerCase().endsWith('.docx')) {
+    const hint = document.getElementById('mcq-parse-hint-landing');
+    if (!window._mammothAvailable) {
+      hint.textContent = '⚠ DOCX недоступен. Вставьте текст вручную или загрузите .txt';
+      return;
+    }
+    hint.innerHTML = '<span class="pdf-loading"><span class="pdf-spinner"></span>Читаю DOCX…</span>';
+    file.arrayBuffer().then(buf => mammoth.extractRawText({ arrayBuffer: buf })).then(result => {
+      document.getElementById('mcq-textarea-landing').value = result.value;
+      hint.textContent = `✓ DOCX: ${file.name}`;
+    }).catch(err => {
+      hint.textContent = '⚠ Ошибка DOCX: ' + err.message;
+    });
+
   } else {
     // Plain text
     const reader = new FileReader();
@@ -2628,7 +2660,7 @@ function mcqParseAndStartLanding() {
   const saved = localStorage.getItem(LS_MCQ);
   if (saved) JSON.parse(saved).forEach(q => { existing[q.question] = q.stats; });
   mcqQuestions = parsed.map(q => ({ ...q, stats: existing[q.question] || q.stats }));
-  localStorage.setItem(LS_MCQ, JSON.stringify(mcqQuestions));
+  lsSet(LS_MCQ, JSON.stringify(mcqQuestions));
   document.getElementById('mcq-parse-hint-landing').textContent = `✓ Загружено ${parsed.length} вопросов`;
   // collapse import, go straight to test
   document.getElementById('import-collapsible').classList.add('collapsed');
@@ -2674,36 +2706,302 @@ function updateActiveTile() {
 // ═══════════════════════════════════════════════
 //  PARSER (unchanged)
 // ═══════════════════════════════════════════════
-function parseQuestions(text, delimiter) {
-  if (delimiter) {
-    const blocks = text.split(delimiter).map(b => b.trim()).filter(Boolean);
-    const result = [];
-    for (const block of blocks) {
-      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length < 2) continue;
-      const question = lines[0];
-      let answer = lines.slice(1).join('\n').replace(/^[-•\t]/gm, '').trim();
-      if (question && answer) result.push({ question, answer, stats: { seen:0, correct:0, wrong:0 } });
-    }
-    return result;
-  }
+// ═══════════════════════════════════════════════
+//  PARSER v2 — каскадный детектор форматов
+//  Форматы (приоритет по порядку):
+//   1. Кастомный разделитель (если задан)
+//   2. Заголовки «Вопрос N» / «В N» / «Q N»
+//   3. Явные маркеры Q:/А: или В:/О:
+//   4. Числовые нумерованные блоки (1. ... 2. ...)
+//   5. Пустая строка как разделитель (первая строка = вопрос)
+//   6. Весь текст как один вопрос (fallback)
+// ═══════════════════════════════════════════════
 
-  const blocks = text.split(/Вопрос\s*\d+\./i);
+/** Нормализует текст: BOM, CRLF, NBSP, мягкий дефис */
+function normalizeText(raw) {
+  return raw
+    .replace(/^\uFEFF/, '')           // BOM
+    .replace(/\r\n/g, '\n')           // CRLF → LF
+    .replace(/\r/g, '\n')             // CR → LF
+    .replace(/\u00A0/g, ' ')          // неразрывный пробел
+    .replace(/\u00AD/g, '')           // мягкий дефис
+    .replace(/\t/g, ' ');             // табы → пробел
+}
+
+/** Создаёт объект вопроса */
+function makeQ(question, answer) {
+  return {
+    question: question.trim(),
+    answer: answer.trim(),
+    stats: { seen: 0, correct: 0, wrong: 0, wrongStreak: 0 }
+  };
+}
+
+/** Убирает типичные «мусорные» префиксы из строки ответа */
+function stripAnswerPrefix(s) {
+  return s.replace(/^[-–—•]\s*/gm, '').trim();
+}
+
+// ── Режим 1: кастомный разделитель ──────────────────────────────────────────
+function parseByCustomDelimiter(text, delimiter) {
+  const blocks = text.split(delimiter).map(b => b.trim()).filter(Boolean);
   const result = [];
-  for (let i = 1; i < blocks.length; i++) {
-    let block = blocks[i].trim();
-    if (!block) continue;
+  for (const block of blocks) {
     const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) continue;
     const question = lines[0];
-    let answer = lines.slice(1).join('\n').replace(/^[-•\t]/gm, '').trim();
-    if (question && answer) result.push({ question, answer, stats: { seen:0, correct:0, wrong:0 } });
+    const answer = stripAnswerPrefix(lines.slice(1).join('\n'));
+    if (question && answer) result.push(makeQ(question, answer));
   }
   return result;
+}
+
+// ── Режим 2: заголовки «Вопрос N» / «В. N» / «Q N» ─────────────────────────
+const RE_HEADER = /^[ \t]*(?:вопрос|question|билет|ticket|в|q)\s*[№#]?\s*\d+[\s.:)–—-]*/im;
+function parseByHeader(lines) {
+  // Голосование: считаем, сколько строк похожи на заголовок
+  const votes = lines.filter(l => RE_HEADER.test(l)).length;
+  if (votes < 1) return null;
+
+  const result = [];
+  let state = 'outside'; // 'outside' | 'in_question' | 'in_answer'
+  let qLines = [], aLines = [];
+
+  const flush = () => {
+    const q = qLines.join(' ').trim();
+    const a = stripAnswerPrefix(aLines.join('\n'));
+    if (q && a) result.push(makeQ(q, a));
+    qLines = []; aLines = [];
+  };
+
+  // Маркеры ответа: «Ответ:», «О:», «A:», «Answer:»
+  const RE_ANS_MARKER = /^[ \t]*(?:ответ|answer|о|a)\s*[:.\-–—]/i;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (RE_HEADER.test(trimmed)) {
+      if (state !== 'outside') flush();
+      // Убираем сам заголовок, берём то, что после него в этой строке
+      const tail = trimmed.replace(RE_HEADER, '').trim();
+      qLines = tail ? [tail] : [];
+      aLines = [];
+      state = 'in_question';
+    } else if (state === 'in_question' && RE_ANS_MARKER.test(trimmed)) {
+      const tail = trimmed.replace(RE_ANS_MARKER, '').trim();
+      aLines = tail ? [tail] : [];
+      state = 'in_answer';
+    } else if (state === 'in_question') {
+      qLines.push(trimmed);
+    } else if (state === 'in_answer') {
+      aLines.push(trimmed);
+    }
+  }
+  if (state !== 'outside') flush();
+
+  return result.length ? result : null;
+}
+
+// ── Режим 3: явные маркеры Q:/A: или В:/О: ──────────────────────────────────
+const RE_Q_MARKER = /^[ \t]*(?:q|в|вопрос|question)\s*[:.\-–—]/i;
+const RE_A_MARKER = /^[ \t]*(?:a|о|ответ|answer)\s*[:.\-–—]/i;
+function parseByQAMarkers(lines) {
+  const qVotes = lines.filter(l => RE_Q_MARKER.test(l)).length;
+  const aVotes = lines.filter(l => RE_A_MARKER.test(l)).length;
+  // Нужно хотя бы по одному «голосу» и примерно одинаковое количество
+  if (qVotes < 1 || aVotes < 1) return null;
+
+  const result = [];
+  let curQ = null, curA = null;
+  let inQ = false, inA = false;
+
+  const flush = () => {
+    if (curQ && curA) result.push(makeQ(curQ, stripAnswerPrefix(curA)));
+    curQ = null; curA = null;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (RE_Q_MARKER.test(trimmed)) {
+      flush();
+      curQ = trimmed.replace(RE_Q_MARKER, '').trim();
+      inQ = true; inA = false;
+    } else if (RE_A_MARKER.test(trimmed)) {
+      curA = trimmed.replace(RE_A_MARKER, '').trim();
+      inQ = false; inA = true;
+    } else if (inQ && trimmed) {
+      curQ += ' ' + trimmed;
+    } else if (inA && trimmed) {
+      curA += '\n' + trimmed;
+    }
+  }
+  flush();
+
+  return result.length ? result : null;
+}
+
+// ── Режим 4: числовые блоки (1. ... 2. ...) ─────────────────────────────────
+const RE_NUM_START = /^[ \t]*(\d{1,3})[.)]\s+(.+)/;
+function parseByNumeric(lines) {
+  // Собираем кандидатов — строки, начинающиеся с «N.» или «N)»
+  const candidates = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = RE_NUM_START.exec(lines[i].trim());
+    if (m) candidates.push({ idx: i, num: parseInt(m[1], 10), text: m[2].trim() });
+  }
+  if (candidates.length < 2) return null;
+
+  // Находим самый длинный последовательный run чисел
+  let bestRun = [], curRun = [candidates[0]];
+  for (let i = 1; i < candidates.length; i++) {
+    if (candidates[i].num === candidates[i-1].num + 1) {
+      curRun.push(candidates[i]);
+    } else {
+      if (curRun.length > bestRun.length) bestRun = curRun;
+      curRun = [candidates[i]];
+    }
+  }
+  if (curRun.length > bestRun.length) bestRun = curRun;
+
+  if (bestRun.length < 2) return null;
+
+  // Каждый числовой блок: первая строка = вопрос, следующие (до след. номера) = ответ
+  const result = [];
+  for (let bi = 0; bi < bestRun.length; bi++) {
+    const start = bestRun[bi].idx;
+    const end   = bi + 1 < bestRun.length ? bestRun[bi+1].idx : lines.length;
+    const qLine = bestRun[bi].text;
+    const aLines = lines.slice(start + 1, end).map(l => l.trim()).filter(Boolean);
+    if (qLine && aLines.length) {
+      result.push(makeQ(qLine, stripAnswerPrefix(aLines.join('\n'))));
+    }
+  }
+  return result.length ? result : null;
+}
+
+// ── Режим 5: пустые строки как разделитель ──────────────────────────────────
+function parseByBlankLine(text) {
+  const blocks = text.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+  if (blocks.length < 2) return null;
+
+  const result = [];
+  for (const block of blocks) {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) continue;
+    const question = lines[0];
+    const answer   = stripAnswerPrefix(lines.slice(1).join('\n'));
+    if (question && answer) result.push(makeQ(question, answer));
+  }
+  return result.length >= 2 ? result : null;
+}
+
+// ── Режим 6: весь текст как один вопрос ─────────────────────────────────────
+function parseAsSingle(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+  return [ makeQ(lines[0], lines.slice(1).join('\n')) ];
+}
+
+// ── ГЛАВНАЯ ФУНКЦИЯ ───────────────────────────────────────────────────────────
+function parseQuestions(rawText, delimiter) {
+  // Защита от огромных вставок (>10 МБ)
+  if (rawText.length > 10 * 1024 * 1024) {
+    rawText = rawText.slice(0, 10 * 1024 * 1024);
+    console.warn('parseQuestions: текст обрезан до 10 МБ');
+  }
+
+  const text  = normalizeText(rawText);
+  const lines = text.split('\n');
+
+  // Режим 1: кастомный разделитель
+  if (delimiter) {
+    return parseByCustomDelimiter(text, delimiter);
+  }
+
+  // Режим 2: заголовки «Вопрос N»
+  const byHeader = parseByHeader(lines);
+  if (byHeader && byHeader.length >= 1) return byHeader;
+
+  // Режим 3: Q:/A: маркеры
+  const byQA = parseByQAMarkers(lines);
+  if (byQA && byQA.length >= 1) return byQA;
+
+  // Режим 4: числовые блоки
+  const byNum = parseByNumeric(lines);
+  if (byNum && byNum.length >= 2) return byNum;
+
+  // Режим 5: пустые строки
+  const byBlank = parseByBlankLine(text);
+  if (byBlank && byBlank.length >= 2) return byBlank;
+
+  // Режим 6: весь текст как один вопрос
+  return parseAsSingle(text) || [];
 }
 
 // ═══════════════════════════════════════════════
 //  PARSE & LOAD
 // ═══════════════════════════════════════════════
+// ── Универсальный загрузчик файлов для карточек ────────────────────────────
+async function loadFlashcardFile(file) {
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  const hint = document.getElementById('file-name');
+
+  if (name.endsWith('.pdf')) {
+    if (!window._pdfJsAvailable) {
+      hint.textContent = '⚠ PDF недоступен. Вставьте текст вручную или загрузите .txt';
+      return;
+    }
+    hint.innerHTML = '<span class="pdf-loading"><span class="pdf-spinner"></span>Читаю PDF…</span>';
+    try {
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+      let text = '';
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        let lastY = null, pageText = '';
+        for (const item of content.items) {
+          if (!item.str) continue;
+          if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) pageText += '\n';
+          pageText += item.str;
+          lastY = item.transform[5];
+        }
+        text += pageText + '\n';
+      }
+      document.getElementById('import-textarea').value = text;
+      hint.textContent = `✓ PDF: ${file.name} (${pdf.numPages} стр.)`;
+    } catch (err) {
+      hint.textContent = '⚠ Ошибка PDF: ' + err.message;
+    }
+
+  } else if (name.endsWith('.docx')) {
+    if (!window._mammothAvailable) {
+      hint.textContent = '⚠ DOCX недоступен. Попробуйте позже или вставьте текст.';
+      return;
+    }
+    hint.innerHTML = '<span class="pdf-loading"><span class="pdf-spinner"></span>Читаю DOCX…</span>';
+    try {
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      document.getElementById('import-textarea').value = result.value;
+      hint.textContent = `✓ DOCX: ${file.name}`;
+    } catch (err) {
+      hint.textContent = '⚠ Ошибка DOCX: ' + err.message;
+    }
+
+  } else {
+    // Plain text
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('import-textarea').value = ev.target.result;
+      hint.textContent = '✓ Файл загружен: ' + file.name;
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+}
+
 function parseAndLoad() {
   const text = document.getElementById('import-textarea').value;
   if (!text.trim()) { alert('Вставьте текст или загрузите файл.'); return; }
@@ -2721,11 +3019,13 @@ function parseAndLoad() {
   }
 
   // merge stats from existing questions if same question text
+  // нормализуем ключ: trim + collapse whitespace, чтобы лишние пробелы не теряли статистику
+  const normKey = s => s.trim().replace(/\s+/g, ' ');
   const existing = {};
-  questions.forEach(q => { existing[q.question] = q.stats; });
+  questions.forEach(q => { existing[normKey(q.question)] = q.stats; });
   questions = parsed.map(q => ({
     ...q,
-    stats: existing[q.question] || q.stats
+    stats: existing[normKey(q.question)] || q.stats
   }));
 
   saveData();
@@ -2795,9 +3095,37 @@ function renderStatsRow() {
 // ═══════════════════════════════════════════════
 //  SAVE / RESET / EXPORT
 // ═══════════════════════════════════════════════
+function lsSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    if (e.name === "QuotaExceededError" || e.code === 22) {
+      showStorageWarning();
+    } else {
+      console.error("localStorage error:", e);
+    }
+  }
+}
+
+function showStorageWarning() {
+  if (window._storageWarnShown) return;
+  window._storageWarnShown = true;
+  const msg = document.createElement("div");
+  msg.style.cssText = [
+    "position:fixed","bottom:1.5rem","left:50%","transform:translateX(-50%)",
+    "background:#ff6b6b","color:#fff","font-family:var(--mono)","font-size:0.8rem",
+    "padding:0.75rem 1.25rem","border-radius:10px","z-index:9999",
+    "box-shadow:0 4px 24px rgba(0,0,0,0.5)","max-width:90vw","text-align:center",
+    "animation:fadeUp 0.3s ease"
+  ].join(";");
+  msg.textContent = "⚠️ Хранилище браузера переполнено — прогресс не сохранён. Уменьшите количество вопросов или очистите данные.";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 7000);
+}
+
 function saveData() {
-  localStorage.setItem(LS_Q, JSON.stringify(questions));
-  localStorage.setItem(LS_MODE, currentMode);
+  lsSet(LS_Q, JSON.stringify(questions));
+  lsSet(LS_MODE, currentMode);
 }
 
 function resetAll() {
@@ -3359,7 +3687,7 @@ function startExam() {
   const timeMin  = parseInt(document.getElementById('exam-time-select').value);
   const countVal = document.getElementById('exam-count-select').value;
   const count    = countVal === 'all' ? questions.length : Math.min(parseInt(countVal), questions.length);
-  localStorage.setItem(LS_EXAM, timeMin);
+  lsSet(LS_EXAM, timeMin);
   examDuration = timeMin * 60;
   examTimeLeft = examDuration;
   examResults  = [];
@@ -3773,6 +4101,12 @@ function renderMcqHub() {
           <button class="btn btn-primary" onclick="mcqStartSaved(false)">▶ По порядку</button>
           <button class="btn btn-ghost"   onclick="mcqStartSaved(true)">🔀 Случайный</button>
         </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.1rem">
+          <button class="btn btn-ghost" style="flex:1" onclick="mcqStartFrom()">↪ С вопроса №...</button>
+          <input id="mcq-start-from" type="number" min="1" placeholder="№" style="width:72px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:0.55rem 0.6rem;color:var(--text);font-family:var(--mono);font-size:0.85rem;outline:none;text-align:center"
+            onkeydown="if(event.key==='Enter')mcqStartFrom()"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
         ${errPool > 0 ? `<button class="btn btn-warn" onclick="mcqStartErrors()">❌ Работа над ошибками (${errPool})</button>` : ''}
         ${hard > 0    ? `<button class="btn btn-danger" onclick="mcqStartHard()">🔥 Сложные вопросы (${hard})</button>` : ''}
         <button class="btn btn-info" onclick="renderMcqList()">📋 Все вопросы (${qs.length})</button>
@@ -3812,7 +4146,7 @@ function mcqToggleHard(idx) {
   if (!all[idx]) return;
   const isHard = all[idx].stats.wrongStreak >= 2;
   all[idx].stats.wrongStreak = isHard ? 0 : 2;
-  localStorage.setItem(LS_MCQ, JSON.stringify(all));
+  lsSet(LS_MCQ, JSON.stringify(all));
   renderMcqList();
 }
 
@@ -3932,6 +4266,20 @@ function mcqStartSaved(shuffle) {
   mcqBegin(shuffle || false);
 }
 
+function mcqStartFrom() {
+  const input = document.getElementById('mcq-start-from');
+  const saved = localStorage.getItem(LS_MCQ);
+  if (!saved) return;
+  const all = JSON.parse(saved);
+  const n = input ? parseInt(input.value) : NaN;
+  if (!n || n < 1 || n > all.length) {
+    if (input) { input.style.borderColor = 'var(--wrong)'; setTimeout(() => input.style.borderColor = 'var(--border)', 1500); }
+    return;
+  }
+  mcqQuestions = all;
+  mcqBegin(false, n - 1); // pass start index
+}
+
 function mcqStartErrors() {
   const saved = localStorage.getItem(LS_MCQ);
   if (!saved) return;
@@ -3993,31 +4341,34 @@ function mcqShowImport() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function mcqBegin(shuffle) {
+function mcqBegin(shuffle, startIndex) {
   // Clean up list scroll-to-top button if present
   const oldBtn = document.getElementById('mcq-scroll-top-btn');
   if (oldBtn) oldBtn.remove();
   const pool = mcqQuestions.map((_, i) => i);
   if (shuffle) pool.sort(() => Math.random() - 0.5);
-  mcqPos = 0;
-  mcqResults = [];
+  mcqQuestions = pool.map(i => mcqQuestions[i]);
+  mcqPos = (startIndex && startIndex > 0 && startIndex < mcqQuestions.length) ? startIndex : 0;
+  // Pre-fill results for skipped questions so progress bar is consistent
+  mcqResults = Array(mcqPos).fill({ isRight: null, skipped: true, question: '', correctArr: [] });
   mcqAnswered = false;
   mcqSelectedNums = [];
-  mcqQuestions = pool.map(i => mcqQuestions[i]);
-  updateInfoPanel(1, mcqQuestions.length);
+  updateInfoPanel(mcqPos + 1, mcqQuestions.length);
   renderMcqQuestion();
 }
 
 // ── SESSION PROGRESS BAR ─────────────────────────
 function mcqProgressBarHtml() {
   const total = mcqQuestions.length;
-  const answered = mcqResults.length;
-  const correct  = mcqResults.filter(r => r.isRight).length;
-  const wrong    = answered - correct;
-  const pct = answered ? Math.round(correct / answered * 100) : 0;
+  // Only count real answers (not skipped placeholders)
+  const realResults = mcqResults.filter(r => !r.skipped);
+  const answered = mcqResults.length; // includes skipped start offset
+  const correct  = realResults.filter(r => r.isRight).length;
+  const pct = realResults.length ? Math.round(correct / realResults.length * 100) : 0;
 
   const segs = mcqQuestions.map((_, i) => {
     if (i >= answered) return '<div class="mcq-seg mcq-seg-none"></div>';
+    if (mcqResults[i]?.skipped) return '<div class="mcq-seg mcq-seg-none" style="opacity:0.3"></div>';
     const isLatest = i === answered - 1;
     const anim = isLatest ? ' style="animation:segPop 0.35s cubic-bezier(0.22,1,0.36,1) both"' : '';
     return mcqResults[i].isRight
@@ -4068,12 +4419,15 @@ function renderMcqQuestion() {
   document.getElementById('mode-area').innerHTML = `
     ${mcqProgressBarHtml()}
     <div class="card mcq-question-card">
-      <div class="card-label">
+      <div class="card-label" style="justify-content:space-between">
         <span>ВОПРОС ${mcqPos + 1} ${hardBadge}</span>
-        <span style="font-family:var(--mono);font-size:0.7rem">
-          <span style="color:var(--correct)">✓${q.stats.correct}</span>
-          <span style="color:var(--wrong);margin-left:0.4rem">✗${q.stats.wrong}</span>
-        </span>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <span style="font-family:var(--mono);font-size:0.7rem">
+            <span style="color:var(--correct)">✓${q.stats.correct}</span>
+            <span style="color:var(--wrong);margin-left:0.4rem">✗${q.stats.wrong}</span>
+          </span>
+          <button onclick="renderMcqHub()" title="Выйти из теста" style="background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:0.7rem;color:var(--muted);padding:0.15rem 0.4rem;border-radius:4px;transition:color 0.15s" onmouseover="this.style.color='var(--wrong)'" onmouseout="this.style.color='var(--muted)'">✕ выйти</button>
+        </div>
       </div>
       <div class="question-text">${esc(q.question)}</div>
       ${multiHint}
@@ -4198,7 +4552,7 @@ function mcqFinishAnswer(isRight, chosenNums) {
     if (match) {
       match.stats = q.stats;
       if (!match.stats.wrongStreak) match.stats.wrongStreak = q.stats.wrongStreak;
-      localStorage.setItem(LS_MCQ, JSON.stringify(all));
+      lsSet(LS_MCQ, JSON.stringify(all));
     }
   }
 
